@@ -6,6 +6,8 @@ const EnvSchema = z.object({
   MONGODB_URI: z.string().min(1, "MONGODB_URI is required"),
   REDIS_URL: z.string().min(1, "REDIS_URL is required"),
   CLIENT_ORIGIN: z.string().url().default("http://localhost:3000"),
+  OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
+  OPENAI_MODEL: z.string().min(1).default("gpt-4o-mini"),
 });
 
 const parsed = EnvSchema.safeParse(process.env);

@@ -4,10 +4,18 @@ import { QuestionPaper } from "../models/QuestionPaper.js";
 import { redisConnection } from "../config/redis.js";
 import { GENERATION_QUEUE, type GenerationJobData } from "../queues/generation.queue.js";
 import { JobEventPublisher } from "../sockets/io.js";
-import { fakeGenerate } from "./fakeGenerate.js";
+import { generatePaper } from "./generatePaper.js";
 import type { QuestionPaperDTO } from "../types/questionPaper.js";
 
 const bus = new JobEventPublisher();
+
+// Phase 2 progress map. The worker decides the percentage; labels come from
+// generatePaper via a callback so AI-stage labels stay accurate even if the
+// generation step changes.
+const PCT_PROCESSING = 5;
+const PCT_AFTER_GEN = 80;
+const PCT_AFTER_SAVE = 95;
+const PCT_DONE = 100;
 
 async function handle(job: Job<GenerationJobData>): Promise<void> {
   const { assignmentId } = job.data;
@@ -16,46 +24,48 @@ async function handle(job: Job<GenerationJobData>): Promise<void> {
   const assignment = await Assignment.findById(assignmentId);
   if (!assignment) throw new Error(`Assignment ${assignmentId} not found`);
 
-  // Mark processing + emit.
   assignment.status = "processing";
   await assignment.save();
   await bus.status({ assignmentId, status: "processing" });
 
-  // Progress stages.
-  await job.updateProgress(10);
-  await bus.progress({ assignmentId, progress: 10, label: "Building prompt" });
+  await job.updateProgress(PCT_PROCESSING);
+  await bus.progress({ assignmentId, progress: PCT_PROCESSING, label: "Queued" });
 
-  await job.updateProgress(40);
-  await bus.progress({ assignmentId, progress: 40, label: "Generating Section A" });
+  // generatePaper handles its own progress labels: "Building prompt", "Calling AI",
+  // "Validating output", and "Loaded from cache" on a cache hit.
+  const paper = await generatePaper(assignment, async (label) => {
+    await bus.progress({ assignmentId, progress: PCT_PROCESSING, label });
+  });
 
-  const { sections } = await fakeGenerate(assignment);
+  await job.updateProgress(PCT_AFTER_GEN);
+  await bus.progress({ assignmentId, progress: PCT_AFTER_GEN, label: "Saving" });
 
-  await job.updateProgress(70);
-  await bus.progress({ assignmentId, progress: 70, label: "Validating" });
-
-  const paper = await QuestionPaper.create({
+  const saved = await QuestionPaper.create({
     assignmentId: assignment._id,
-    sections,
+    sections: paper.sections,
     status: "completed",
   });
 
   assignment.status = "completed";
   await assignment.save();
 
-  await job.updateProgress(100);
-  await bus.progress({ assignmentId, progress: 100, label: "Done" });
-  await bus.status({ assignmentId, status: "completed" });
+  await job.updateProgress(PCT_AFTER_SAVE);
+  await bus.progress({ assignmentId, progress: PCT_AFTER_SAVE, label: "Saved" });
 
   const paperDto: QuestionPaperDTO = {
-    _id: paper._id.toString(),
+    _id: saved._id.toString(),
     assignmentId: assignment._id!.toString(),
-    sections: paper.sections as QuestionPaperDTO["sections"],
+    sections: saved.sections as QuestionPaperDTO["sections"],
     status: "completed",
-    createdAt: paper.get("createdAt").toISOString(),
-    updatedAt: paper.get("updatedAt").toISOString(),
+    createdAt: saved.get("createdAt").toISOString(),
+    updatedAt: saved.get("updatedAt").toISOString(),
   };
 
+  await job.updateProgress(PCT_DONE);
+  await bus.progress({ assignmentId, progress: PCT_DONE, label: "Done" });
+  await bus.status({ assignmentId, status: "completed" });
   await bus.completed({ assignmentId, paper: paperDto });
+
   console.log(`[worker] job ${job.id} completed`);
 }
 
@@ -69,7 +79,6 @@ export function startGenerationWorker(): Worker<GenerationJobData> {
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         console.error(`[worker] job ${job.id} failed:`, message);
-        // Mark failed in DB and record an error paper row for traceability.
         await Assignment.findByIdAndUpdate(assignmentId, { status: "failed" }).catch(() => {});
         await QuestionPaper.create({
           assignmentId,
@@ -79,11 +88,10 @@ export function startGenerationWorker(): Worker<GenerationJobData> {
         }).catch(() => {});
         await bus.status({ assignmentId, status: "failed" });
         await bus.failed({ assignmentId, error: message });
-        throw err; // let BullMQ record the failure
+        throw err;
       }
     },
     {
-      // Same cast pattern as generation.queue.ts — runtime-compatible, type-distinct.
       connection: redisConnection as unknown as ConnectionOptions,
       concurrency: 2,
     }

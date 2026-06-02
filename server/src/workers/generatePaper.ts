@@ -6,6 +6,7 @@ import {
   validatePaperAgainstAssignment,
   type GeneratedPaper,
 } from "./paperSchema.js";
+import { cacheKey, getCachedPaper, setCachedPaper } from "./paperCache.js";
 
 export type ProgressFn = (label: string) => Promise<void> | void;
 
@@ -108,11 +109,31 @@ export async function generatePaper(
 ): Promise<GeneratedPaper> {
   await progress("Building prompt");
 
+  const key = cacheKey({
+    title: assignment.title,
+    questionTypes: assignment.questionTypes,
+    numQuestions: assignment.numQuestions,
+    totalMarks: assignment.totalMarks,
+    instructions: assignment.instructions ?? undefined,
+    sourceText: assignment.sourceText ?? undefined,
+  });
+
+  const cached = await getCachedPaper(key);
+  if (cached) {
+    await progress("Loaded from cache");
+    console.log(`[generatePaper] cache HIT for key ${key.slice(-12)}`);
+    return assignStableIds(cached);
+  }
+
+  console.log(`[generatePaper] cache MISS for key ${key.slice(-12)} — calling OpenAI`);
+
   await progress("Calling AI");
   const first = await callOnce(assignment, null);
   if (first.ok) {
     await progress("Validating output");
-    return assignStableIds(first.paper);
+    const finalized = assignStableIds(first.paper);
+    await setCachedPaper(key, finalized);
+    return finalized;
   }
 
   console.warn(`[generatePaper] first attempt failed: ${first.reason}`);
@@ -121,7 +142,9 @@ export async function generatePaper(
   const second = await callOnce(assignment, first.reason);
   if (second.ok) {
     await progress("Validating output");
-    return assignStableIds(second.paper);
+    const finalized = assignStableIds(second.paper);
+    await setCachedPaper(key, finalized);
+    return finalized;
   }
 
   throw new Error(

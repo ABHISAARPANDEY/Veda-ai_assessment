@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createAssignment } from "../lib/api";
 import { getSocket } from "../lib/socket";
 import type {
@@ -25,7 +25,12 @@ export default function HomePage() {
   const [paper, setPaper] = useState<QuestionPaperDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const subscribedId = useRef<string | null>(null);
+  // Open the socket as soon as the page mounts. This closes the race window
+  // where the worker could emit early `job:status`/`job:progress` events before
+  // the client finishes connecting and joining the room.
+  useEffect(() => {
+    getSocket();
+  }, []);
 
   useEffect(() => {
     if (!assignmentId) return;
@@ -33,40 +38,44 @@ export default function HomePage() {
 
     const subscribe = () => {
       socket.emit("subscribe", assignmentId);
-      subscribedId.current = assignmentId;
     };
 
-    if (socket.connected) subscribe();
-    socket.on("connect", subscribe);
-
-    socket.on("job:status", (p: { assignmentId: string; status: AssignmentStatus }) => {
+    const onStatus = (p: { assignmentId: string; status: AssignmentStatus }) => {
       if (p.assignmentId === assignmentId) setStatus(p.status);
-    });
-    socket.on(
-      "job:progress",
-      (p: { assignmentId: string; progress: number; label: string }) => {
-        if (p.assignmentId === assignmentId) setProgress({ pct: p.progress, label: p.label });
-      }
-    );
-    socket.on("job:completed", (p: { assignmentId: string; paper: QuestionPaperDTO }) => {
+    };
+    const onProgress = (p: {
+      assignmentId: string;
+      progress: number;
+      label: string;
+    }) => {
+      if (p.assignmentId === assignmentId) setProgress({ pct: p.progress, label: p.label });
+    };
+    const onCompleted = (p: { assignmentId: string; paper: QuestionPaperDTO }) => {
       if (p.assignmentId === assignmentId) {
         setPaper(p.paper);
         setStatus("completed");
       }
-    });
-    socket.on("job:failed", (p: { assignmentId: string; error: string }) => {
+    };
+    const onFailed = (p: { assignmentId: string; error: string }) => {
       if (p.assignmentId === assignmentId) {
         setError(p.error);
         setStatus("failed");
       }
-    });
+    };
+
+    if (socket.connected) subscribe();
+    socket.on("connect", subscribe);
+    socket.on("job:status", onStatus);
+    socket.on("job:progress", onProgress);
+    socket.on("job:completed", onCompleted);
+    socket.on("job:failed", onFailed);
 
     return () => {
       socket.off("connect", subscribe);
-      socket.off("job:status");
-      socket.off("job:progress");
-      socket.off("job:completed");
-      socket.off("job:failed");
+      socket.off("job:status", onStatus);
+      socket.off("job:progress", onProgress);
+      socket.off("job:completed", onCompleted);
+      socket.off("job:failed", onFailed);
     };
   }, [assignmentId]);
 

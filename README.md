@@ -12,7 +12,13 @@ Built end-to-end against the [VedaAI hiring assignment brief](#-assignment-brief
 
 ---
 
-## Demo Video
+## 🌐 Live demo
+
+**App:** https://veda-ai-assessment-nine.vercel.app
+
+**API:** https://vedaai-api-imf5.onrender.com/api/health
+
+Sign up with any email — the demo flow takes ~30 seconds from blank account to generated paper.
 
 > 🎥 **Loom walkthrough:** *(add link after recording — script is in `docs/loom-script.md`)*
 

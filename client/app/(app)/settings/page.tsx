@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Camera } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
@@ -9,6 +10,7 @@ import { getMe, updateMe, uploadAvatar, avatarSrc, type MeUser } from "../../../
 export default function SettingsPage() {
   const { data: session, update } = useSession();
   const token = (session as any)?.backendToken as string | undefined;
+  const router = useRouter();
 
   const [user, setUser] = useState<MeUser | null>(null);
   const [name, setName] = useState("");
@@ -51,6 +53,7 @@ export default function SettingsPage() {
     setMessage("Profile updated");
     // Refresh session so the topbar reflects the new name
     await update();
+    router.refresh();
   }
 
   async function onAvatar(file: File) {
@@ -67,6 +70,7 @@ export default function SettingsPage() {
     setUser(res.user);
     setMessage("Avatar updated");
     await update();
+    router.refresh();
   }
 
   if (!user) {

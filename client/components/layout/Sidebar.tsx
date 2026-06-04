@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
 import {
   LayoutGrid,
   Users,
@@ -13,6 +12,8 @@ import {
 } from "lucide-react";
 import { VedaLogo } from "../icons/VedaLogo";
 import { cn } from "../../lib/cn";
+import type { MeUser } from "../../lib/authClient";
+import { avatarSrc } from "../../lib/authClient";
 
 interface NavItem {
   href: string;
@@ -28,23 +29,30 @@ const NAV: NavItem[] = [
   { href: "/library", label: "My Library", icon: <Library className="h-4 w-4" /> },
 ];
 
-export function Sidebar({ assignmentsCount }: { assignmentsCount?: number }) {
+function initialsFrom(s: string): string {
+  const parts = s.split(/\s+/).filter(Boolean).slice(0, 2);
+  if (parts.length === 0) return "VA";
+  return parts.map((p) => p[0]).join("").toUpperCase();
+}
+
+export function Sidebar({
+  assignmentsCount,
+  user,
+}: {
+  assignmentsCount?: number;
+  user?: MeUser | null;
+}) {
   const pathname = usePathname();
-  const { data: session } = useSession();
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
-  const school = (session?.user as any)?.school || "Add your school in Settings";
-  const schoolInitials = school
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w: string) => w[0])
-    .join("")
-    .toUpperCase() || "VA";
+  const school = user?.school?.trim() || "";
+  const schoolDisplay = school || "Add your school in Settings";
+  const schoolInitials = initialsFrom(school || "VedaAI");
+  const schoolSrc = avatarSrc(user?.avatarUrl ?? null);
 
   return (
-    <aside className="hidden lg:flex flex-col w-[270px] shrink-0 bg-card rounded-2xl shadow-card my-4 ml-4 p-4">
+    <aside className="hidden lg:flex flex-col w-[270px] shrink-0 bg-card rounded-2xl shadow-card my-4 ml-4 p-4 h-[calc(100vh-32px)] sticky top-4 overflow-y-auto">
       <div className="flex items-center gap-3 px-2 py-1">
         <VedaLogo size={32} />
         <span className="font-bold text-lg">VedaAI</span>
@@ -86,18 +94,26 @@ export function Sidebar({ assignmentsCount }: { assignmentsCount?: number }) {
       <div className="mt-auto flex flex-col gap-3">
         <Link
           href="/settings"
-          className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-primary/85 hover:bg-inset"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium",
+            isActive("/settings") ? "bg-inset text-primary" : "text-primary/85 hover:bg-inset"
+          )}
         >
           <Settings className="h-4 w-4 text-secondary" />
           Settings
         </Link>
         <div className="flex items-center gap-3 bg-surface2 rounded-2xl p-3">
-          <div className="h-9 w-9 rounded-full bg-inset grid place-items-center text-xs font-bold">
-            {schoolInitials}
+          <div className="h-9 w-9 rounded-full bg-inset grid place-items-center text-xs font-bold overflow-hidden shrink-0">
+            {schoolSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={schoolSrc} alt={schoolDisplay} className="h-full w-full object-cover" />
+            ) : (
+              schoolInitials
+            )}
           </div>
           <div className="leading-tight truncate">
-            <div className="text-sm font-semibold truncate">{school || "Your school"}</div>
-            <div className="text-xs text-secondary truncate">{session?.user?.email ?? ""}</div>
+            <div className="text-sm font-semibold truncate">{schoolDisplay}</div>
+            <div className="text-xs text-secondary truncate">{user?.email ?? ""}</div>
           </div>
         </div>
       </div>

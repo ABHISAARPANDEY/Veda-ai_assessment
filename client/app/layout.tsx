@@ -1,16 +1,21 @@
 import "./globals.css";
+import { Inter } from "next/font/google";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata = {
-  title: "AI Assessment Creator",
-  description: "Phase 1 scaffold",
+  title: "VedaAI",
+  description: "AI Assessment Creator",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body style={{ fontFamily: "system-ui, sans-serif", margin: 0, padding: 24 }}>
-        {children}
-      </body>
+    <html lang="en" className={inter.variable}>
+      <body className="bg-page text-primary min-h-screen">{children}</body>
     </html>
   );
 }

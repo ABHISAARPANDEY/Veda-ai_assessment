@@ -32,6 +32,11 @@ assignmentsRouter.post("/", async (req: Request, res: Response) => {
   }
 });
 
+assignmentsRouter.get("/", async (_req: Request, res: Response) => {
+  const items = await Assignment.find().sort({ createdAt: -1 }).limit(50).lean();
+  return res.json({ items });
+});
+
 assignmentsRouter.get("/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
   if (!isValidObjectId(id)) {

@@ -60,3 +60,46 @@ assignmentsRouter.get("/:id", attachAuth, async (req: Request, res: Response) =>
   const paper = await QuestionPaper.findOne({ assignmentId: id }).lean();
   return res.json({ assignment, paper: paper ?? null });
 });
+
+assignmentsRouter.delete("/:id", requireAuth, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) {
+    return res.status(400).json({ error: "Invalid assignment id" });
+  }
+  const assignment = await Assignment.findById(id);
+  if (!assignment) {
+    return res.status(404).json({ error: "Assignment not found" });
+  }
+  if (assignment.userId && assignment.userId.toString() !== req.user!.sub) {
+    return res.status(404).json({ error: "Assignment not found" });
+  }
+  await QuestionPaper.deleteMany({ assignmentId: id });
+  await Assignment.deleteOne({ _id: id });
+  return res.json({ ok: true });
+});
+
+assignmentsRouter.post("/:id/regenerate", requireAuth, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) {
+    return res.status(400).json({ error: "Invalid assignment id" });
+  }
+  const assignment = await Assignment.findById(id);
+  if (!assignment) {
+    return res.status(404).json({ error: "Assignment not found" });
+  }
+  if (assignment.userId && assignment.userId.toString() !== req.user!.sub) {
+    return res.status(404).json({ error: "Assignment not found" });
+  }
+  // Delete the existing paper so the worker can write a fresh one
+  await QuestionPaper.deleteMany({ assignmentId: id });
+  // Reset status
+  assignment.status = "pending";
+  await assignment.save();
+  // Enqueue a new generation job. Use a fresh jobId because the old one is in BullMQ history.
+  await generationQueue.add(
+    "regenerate",
+    { assignmentId: id },
+    { jobId: `${id}-${Date.now()}` }
+  );
+  return res.json({ ok: true, assignmentId: id });
+});

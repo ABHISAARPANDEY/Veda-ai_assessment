@@ -43,7 +43,9 @@ Difficulty distribution (important):
 - Sections with very few questions (≤2) can have just two different difficulties, but never all the same value when there are 3 or more questions.
 
 Question types:
-- For every question with type "mcq", the "options" array MUST contain EXACTLY 4 plausible option strings (no leading "(a)" or "a)" prefixes — just the option text; the UI will render the (a)-(d) labels).
+- For every question with type "mcq":
+  - The "options" array MUST contain EXACTLY 4 plausible option strings (no leading "(a)", "a)", "(i)", "i)" or similar prefixes — just the option text; the UI will render the (a)-(d) labels).
+  - The "text" field is the QUESTION ONLY. It MUST NOT contain the options inline. Do not append "(i) ... (ii) ... (iii) ... (iv) ..." or "(a) ... (b) ..." or any option list to the question text. Options live in the "options" array ONLY.
 - For all OTHER question types (short, long, diagram, numerical), set "options" to []. Do NOT include an empty options array as an object or null — must be an array.
 
 Answers (the answer key — must be detailed, this is the most important quality bar):

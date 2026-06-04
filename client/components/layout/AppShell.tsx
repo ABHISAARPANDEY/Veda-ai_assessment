@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { MobileHeader, MobileTabs } from "./MobileShell";
+import { RouteProgress } from "./RouteProgress";
 import type { MeUser } from "../../lib/authClient";
 
 export function AppShell({
@@ -16,6 +18,9 @@ export function AppShell({
 }) {
   return (
     <div className="min-h-screen bg-page">
+      <Suspense fallback={null}>
+        <RouteProgress />
+      </Suspense>
       <div className="flex">
         <Sidebar assignmentsCount={assignmentsCount} user={user} />
         <div className="flex-1 min-w-0">

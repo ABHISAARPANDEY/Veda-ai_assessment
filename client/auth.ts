@@ -40,10 +40,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/auth/sign-in",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      // Initial sign-in: stash backend token + school on the JWT
       if (user) {
         token.backendToken = (user as any).backendToken;
         token.school = (user as any).school;
+      }
+      // session.update({ user: {...} }) was called — merge new fields into JWT
+      // so the layout/sidebar/topbar reflect the change immediately without
+      // any round-trip to the backend.
+      if (trigger === "update" && session?.user) {
+        const u = session.user as {
+          name?: string | null;
+          image?: string | null;
+          school?: string | null;
+        };
+        if (typeof u.name === "string") token.name = u.name;
+        if (typeof u.image === "string" || u.image === null) token.picture = u.image ?? undefined;
+        if (typeof u.school === "string") token.school = u.school;
       }
       return token;
     },
@@ -52,6 +66,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         (session.user as any).id = token.sub;
         (session.user as any).school = token.school;
+        // NextAuth populates name/email/image from token.* automatically,
+        // so the update above is reflected here.
       }
       return session;
     },

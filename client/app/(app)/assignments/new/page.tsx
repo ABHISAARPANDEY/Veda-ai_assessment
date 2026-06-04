@@ -219,7 +219,12 @@ export default function NewAssignmentPage() {
       {activeId && (
         <GenerationOverlay
           assignmentId={activeId}
-          onCompleted={(id) => router.push(`/assignments/${id}`)}
+          onCompleted={(id) => {
+            // Bust any cached list (so /assignments shows the new entry
+            // immediately when the user navigates there from the paper)
+            router.refresh();
+            router.push(`/assignments/${id}`);
+          }}
         />
       )}
     </div>

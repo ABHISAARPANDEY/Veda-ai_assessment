@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { getAssignment } from "../../../../lib/api";
 import { auth } from "../../../../auth";
-import { getMe } from "../../../../lib/authClient";
 import { persona } from "../../../../lib/persona";
 import { Card } from "../../../../components/ui/Card";
 import { PaperBanner } from "../../../../components/ui/PaperBanner";
@@ -20,10 +19,20 @@ export default async function AssignmentPaperPage({
 }) {
   const { id } = await params;
   const session = await auth();
-  const token = (session as any)?.backendToken as string | undefined;
+  const token = (session as { backendToken?: string } | null)?.backendToken;
 
-  // Fetch fresh user data (settings changes aren't in the session JWT)
-  const me = token ? await getMe(token) : null;
+  // User data comes from the session JWT — no extra round-trip.
+  // session.update() in Settings keeps these values fresh after edits.
+  const su = session?.user as
+    | { name?: string | null; image?: string | null; school?: string | null }
+    | undefined;
+  const me = su
+    ? {
+        name: su.name ?? "",
+        avatarUrl: su.image ?? "",
+        school: su.school ?? "",
+      }
+    : null;
 
   let data: Awaited<ReturnType<typeof getAssignment>>;
   try {

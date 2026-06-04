@@ -51,8 +51,15 @@ export default function SettingsPage() {
     }
     setUser(res.user);
     setMessage("Profile updated");
-    // Refresh session so the topbar reflects the new name
-    await update();
+    // Merge new values into the session JWT so topbar/sidebar reflect the
+    // change everywhere on next render — no API round-trip needed.
+    await update({
+      user: {
+        name: res.user.name,
+        school: res.user.school,
+        image: res.user.avatarUrl || null,
+      },
+    } as Parameters<typeof update>[0]);
     router.refresh();
   }
 
@@ -69,7 +76,13 @@ export default function SettingsPage() {
     }
     setUser(res.user);
     setMessage("Avatar updated");
-    await update();
+    await update({
+      user: {
+        name: res.user.name,
+        school: res.user.school,
+        image: res.user.avatarUrl,
+      },
+    } as Parameters<typeof update>[0]);
     router.refresh();
   }
 

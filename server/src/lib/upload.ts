@@ -33,6 +33,16 @@ export const uploadImage = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
+// Memory-storage variant for avatars stored as base64 data URLs on the user
+// document. Used because Render's free-tier disk is ephemeral — files written
+// to /app/uploads vanish when the container sleeps. Storing in Mongo as a data
+// URL keeps avatars persistent across restarts.
+export const uploadImageMemory = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: imageFilter,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB (base64 ~33% larger, so ~2.7MB stored)
+});
+
 const inMemoryStorage = multer.memoryStorage();
 
 function sourceFileFilter(

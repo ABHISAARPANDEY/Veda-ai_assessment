@@ -67,7 +67,9 @@ export async function createAssignment(
 
 export async function listAssignments(token?: string | null): Promise<AssignmentDTO[]> {
   const res = await fetch(`${API}/api/assignments`, {
-    cache: "no-store",
+    // Short revalidate window so rapid client navs reuse the cached list.
+    // router.refresh() (e.g. after delete) busts the cache.
+    next: { revalidate: 10 },
     headers: { ...authHeader(token) },
   });
   if (!res.ok) throw new Error(`listAssignments failed: ${res.status}`);

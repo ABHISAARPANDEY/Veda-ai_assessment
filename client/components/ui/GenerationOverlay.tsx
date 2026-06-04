@@ -10,7 +10,24 @@ import type { AssignmentStatus, QuestionPaperDTO } from "../../types";
 // Polling interval for the API fallback. Picks up status changes when socket
 // events are missed (e.g. socket connects after the worker already finished,
 // which happens on Render free-tier cold starts).
-const POLL_MS = 2500;
+const POLL_MS = 1500;
+const FIRST_TICK_MS = 600;
+const FETCH_TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  try {
+    const result = await Promise.race([
+      promise,
+      new Promise<null>((resolve) => {
+        timeoutId = setTimeout(() => resolve(null), ms);
+      }),
+    ]);
+    return result;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
 
 export function GenerationOverlay({
   assignmentId,
@@ -83,33 +100,32 @@ export function GenerationOverlay({
 
     const tick = async () => {
       if (cancelled || finishedRef.current) return;
-      try {
-        const data = await getAssignment(assignmentId, token);
-        if (cancelled) return;
+      const data = await fetchWithTimeout(getAssignment(assignmentId, token), FETCH_TIMEOUT_MS);
+      if (cancelled) return;
+      if (data) {
         const s = data.assignment.status as AssignmentStatus;
         setStatus((prev) => (prev === "failed" ? prev : s));
+        if (s === "processing" && label === "Starting…") setLabel("Generating…");
         if (s === "completed" && !finishedRef.current) {
           finishedRef.current = true;
-          // small delay so the user briefly sees "Done" before the route change
           setLabel("Done");
           setPct(100);
-          setTimeout(() => onCompletedRef.current(assignmentId), 250);
+          setTimeout(() => onCompletedRef.current(assignmentId), 200);
           return;
         }
         if (s === "failed" && !finishedRef.current) {
           finishedRef.current = true;
           setStatus("failed");
-          setError(data.assignment.status === "failed" ? "Generation failed on the server" : null);
+          setError("Generation failed on the server");
           return;
         }
-      } catch {
-        // network/cold-start hiccup — just try again next tick
       }
+      // Continue polling — fast retry whether the call returned or timed out
       if (!cancelled) timer = setTimeout(tick, POLL_MS);
     };
 
-    // First tick after a short delay so socket has a moment to deliver its first event
-    timer = setTimeout(tick, 1500);
+    // Start polling almost immediately so a slow-socket first event doesn't strand us
+    timer = setTimeout(tick, FIRST_TICK_MS);
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);

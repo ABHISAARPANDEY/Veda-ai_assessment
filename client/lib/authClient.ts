@@ -24,7 +24,10 @@ export interface MeUser {
 export async function getMe(token: string): Promise<MeUser | null> {
   const res = await fetch(`${API}/api/auth/me`, {
     headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
+    // Cache for 10s on the Next server so rapid navs don't refetch — settings
+    // changes call router.refresh() which busts the cache. Trade-off: avatar/
+    // name changes are reflected within 10s instead of instantly.
+    next: { revalidate: 10 },
   });
   if (!res.ok) return null;
   const data = (await res.json()) as { user: MeUser };
@@ -63,6 +66,8 @@ export async function uploadAvatar(
 
 export function avatarSrc(url: string | null | undefined): string | null {
   if (!url) return null;
-  if (url.startsWith("http")) return url;
+  // Pass-through for absolute URLs and base64 data URLs (avatars are stored
+  // as data URLs on Render to survive ephemeral-disk restarts)
+  if (url.startsWith("http") || url.startsWith("data:")) return url;
   return `${API}${url}`;
 }

@@ -46,7 +46,9 @@ Generation rules:
 - Each question must have a non-empty "answer" — the correct answer to the question, written as a short explanation (1-3 sentences).
 - Each section must have at least one question.
 - Question and section ids should be short and stable (e.g. "A", "B"; "A1", "A2", "B1").
-- If source material is provided, base questions on it. Otherwise generate questions appropriate to the title/topic.`;
+- If source material is provided (look for the "sourceText" field), use it as the authoritative basis. Quote concepts, examples, and terms from it. Do NOT invent facts that contradict the source.
+- For large source material (a book or textbook), distribute questions across the document — don't draw them all from the first page.
+- If no source material is provided, generate questions appropriate to the title/topic.`;
 
 /**
  * Build a system + user message pair for the model.

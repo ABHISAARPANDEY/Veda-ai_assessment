@@ -42,7 +42,7 @@ export function FileDropzone({
           <CloudUpload className="h-7 w-7 text-primary" />
         </div>
         <div className="mt-3 font-semibold">Choose a file or drag & drop it here</div>
-        <div className="mt-1 text-xs text-muted">PDF or text, upto 10MB</div>
+        <div className="mt-1 text-xs text-muted">PDF, books, or text — upto 50MB</div>
         <div className="mt-4">
           <Button
             variant="white"
@@ -63,7 +63,7 @@ export function FileDropzone({
         {name && <div className="mt-3 text-xs text-secondary">Selected: {name}</div>}
       </div>
       <div className="mt-2 text-center text-xs text-secondary">
-        Upload a PDF or text file to base questions on its content (optional)
+        Upload a textbook, book, or any PDF — the AI will read it and base questions on its content (optional)
       </div>
     </>
   );

@@ -4,6 +4,7 @@ import { buildPrompt } from "./promptBuilder.js";
 import {
   PaperSchema,
   validatePaperAgainstAssignment,
+  reconcilePaper,
   type GeneratedPaper,
 } from "./paperSchema.js";
 import { cacheKey, getCachedPaper, setCachedPaper } from "./paperCache.js";
@@ -122,7 +123,7 @@ export async function generatePaper(
   if (cached) {
     await progress("Loaded from cache");
     console.log(`[generatePaper] cache HIT for key ${key.slice(-12)}`);
-    return assignStableIds(cached);
+    return reconcilePaper(assignStableIds(cached), { totalMarks: assignment.totalMarks });
   }
 
   console.log(`[generatePaper] cache MISS for key ${key.slice(-12)} — calling OpenAI`);
@@ -131,7 +132,7 @@ export async function generatePaper(
   const first = await callOnce(assignment, null);
   if (first.ok) {
     await progress("Validating output");
-    const finalized = assignStableIds(first.paper);
+    const finalized = reconcilePaper(assignStableIds(first.paper), { totalMarks: assignment.totalMarks });
     await setCachedPaper(key, finalized);
     return finalized;
   }
@@ -142,7 +143,7 @@ export async function generatePaper(
   const second = await callOnce(assignment, first.reason);
   if (second.ok) {
     await progress("Validating output");
-    const finalized = assignStableIds(second.paper);
+    const finalized = reconcilePaper(assignStableIds(second.paper), { totalMarks: assignment.totalMarks });
     await setCachedPaper(key, finalized);
     return finalized;
   }

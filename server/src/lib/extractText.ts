@@ -1,6 +1,6 @@
 import pdfParse from "pdf-parse";
 
-const MAX_CHARS = 20_000; // cap to keep token cost under control
+const MAX_CHARS = 120_000; // cap to keep token cost under control
 
 export async function extractText(buffer: Buffer, mimetype: string): Promise<string> {
   let raw = "";

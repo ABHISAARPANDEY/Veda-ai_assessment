@@ -17,15 +17,33 @@ function authHeader(token?: string | null): Record<string, string> {
 
 export async function createAssignment(
   body: CreateAssignmentBody,
-  token?: string | null
+  token?: string | null,
+  file?: File | null
 ): Promise<
   | { ok: true; assignment: AssignmentDTO }
   | { ok: false; error: string; details?: unknown }
 > {
+  const headers: Record<string, string> = { ...authHeader(token) };
+  let payload: BodyInit;
+  if (file) {
+    const fd = new FormData();
+    fd.append("title", body.title);
+    fd.append("numQuestions", String(body.numQuestions));
+    fd.append("totalMarks", String(body.totalMarks));
+    fd.append("questionTypes", JSON.stringify(body.questionTypes));
+    if (body.instructions) fd.append("instructions", body.instructions);
+    if (body.dueDate) fd.append("dueDate", body.dueDate);
+    fd.append("source", file);
+    payload = fd;
+    // Note: do NOT set Content-Type; the browser sets it with boundary
+  } else {
+    headers["Content-Type"] = "application/json";
+    payload = JSON.stringify(body);
+  }
   const res = await fetch(`${API}/api/assignments`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeader(token) },
-    body: JSON.stringify(body),
+    headers,
+    body: payload,
   });
   const data = await res.json();
   if (!res.ok) {

@@ -12,7 +12,7 @@ export interface QuestionRow {
 export interface FormState {
   title: string;
   dueDate: string;            // YYYY-MM-DD
-  file: File | null;          // cosmetic — not transmitted (Phase 3 decision)
+  file: File | null;          // transmitted as multipart "source" field (Phase 4 Wave E)
   rows: QuestionRow[];
   instructions: string;
 }
@@ -128,7 +128,7 @@ export const useAssignmentStore = create<Store>((set, get) => ({
       instructions: form.instructions || undefined,
       dueDate: form.dueDate || undefined,
     };
-    const res = await createAssignment(body, token);
+    const res = await createAssignment(body, token, form.file);
     set({ submitting: false });
     if (!res.ok) {
       set({ submitError: res.error });

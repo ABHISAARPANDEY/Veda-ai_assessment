@@ -2,7 +2,10 @@
 import Link from "next/link";
 import { MoreVertical } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import type { AssignmentDTO } from "../../types";
+import { deleteAssignment } from "../../lib/api";
 import { Card } from "./Card";
 
 function fmt(d?: string) {
@@ -13,7 +16,22 @@ function fmt(d?: string) {
 }
 
 export function AssignmentCard({ a }: { a: AssignmentDTO }) {
+  const router = useRouter();
+  const { data: session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function onDelete() {
+    const token = (session as any)?.backendToken as string | undefined;
+    if (!token) return;
+    if (!confirm(`Delete "${a.title}"? This cannot be undone.`)) return;
+    setDeleting(true);
+    const ok = await deleteAssignment(a._id, token);
+    setDeleting(false);
+    setMenuOpen(false);
+    if (ok) router.refresh();
+  }
+
   return (
     <Card className="p-6 relative">
       <div className="flex items-start justify-between">
@@ -39,8 +57,13 @@ export function AssignmentCard({ a }: { a: AssignmentDTO }) {
             >
               View Assignment
             </Link>
-            <button className="block w-full text-left px-4 py-2 text-sm text-danger hover:bg-inset">
-              Delete
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={deleting}
+              className="block w-full text-left px-4 py-2 text-sm text-danger hover:bg-inset disabled:opacity-50"
+            >
+              {deleting ? "Deleting…" : "Delete"}
             </button>
           </div>
         )}

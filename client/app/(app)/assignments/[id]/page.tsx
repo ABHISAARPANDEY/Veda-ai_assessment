@@ -8,6 +8,7 @@ import { PaperHeader } from "../../../../components/ui/PaperHeader";
 import { QuestionList } from "../../../../components/ui/QuestionList";
 import { AnswerKey } from "../../../../components/ui/AnswerKey";
 import { DownloadPdfButton } from "../../../../components/pdf/DownloadPdfButton";
+import { RegenerateButton } from "../../../../components/ui/RegenerateButton";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,9 @@ export default async function AssignmentPaperPage({
           />
         }
       />
+      <div className="flex justify-end gap-2">
+        <RegenerateButton assignmentId={id} />
+      </div>
       <Card className="p-8 lg:p-12">
         <PaperHeader totalMarks={assignment.totalMarks} schoolFullName={schoolFullName} />
         <div className="mt-8 space-y-8">

@@ -55,3 +55,19 @@ export async function getAssignment(
   if (!res.ok) throw new Error(`getAssignment failed: ${res.status}`);
   return (await res.json()) as { assignment: AssignmentDTO; paper: QuestionPaperDTO | null };
 }
+
+export async function deleteAssignment(id: string, token: string): Promise<boolean> {
+  const res = await fetch(`${API}/api/assignments/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.ok;
+}
+
+export async function regenerateAssignment(id: string, token: string): Promise<boolean> {
+  const res = await fetch(`${API}/api/assignments/${id}/regenerate`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.ok;
+}

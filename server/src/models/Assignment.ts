@@ -5,7 +5,7 @@ const AssignmentSchema = new Schema(
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: false,  // allow legacy data without owner
+      required: false,
       index: true,
     },
     title: { type: String, required: true, trim: true },
@@ -15,6 +15,8 @@ const AssignmentSchema = new Schema(
     totalMarks: { type: Number, required: true, min: 1 },
     instructions: { type: String, default: "" },
     sourceText: { type: String },
+    classLevel: { type: String, default: "" },     // e.g. "Class 5", "JEE Main", etc.
+    subject: { type: String, default: "" },        // e.g. "Physics", "English"
     status: {
       type: String,
       enum: ["pending", "processing", "completed", "failed"],

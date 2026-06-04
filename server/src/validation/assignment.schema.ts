@@ -35,6 +35,8 @@ export const CreateAssignmentSchema = z.object({
     .number({ invalid_type_error: "totalMarks must be a number" })
     .positive("totalMarks must be positive"),
   instructions: z.string().optional(),
+  classLevel: z.string().trim().optional(),
+  subject: z.string().trim().optional(),
   sourceText: z.string().optional(),
 });
 

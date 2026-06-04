@@ -39,6 +39,7 @@ Output rules (these are not optional):
 
 Generation rules:
 - Generate EXACTLY the requested number of questions in total, distributed across logical sections (Section A, Section B, ...) grouped by question type or difficulty.
+- If "classLevel" is provided (e.g. "Class 5", "Class 12", "JEE Main", "JEE Advanced", "NEET"), calibrate question difficulty and depth to that level. If "subject" is provided, ensure questions stay within that subject area.
 - Distribute the requested total marks across the questions so they SUM TO EXACTLY the requested totalMarks. Whole numbers preferred.
 - Every "difficulty" value must be exactly one of: "easy", "medium", "hard". No other values.
 - Every "type" value must be one of the requested question types.
@@ -57,6 +58,8 @@ Generation rules:
 export function buildPrompt(assignment: AssignmentDoc & { _id: unknown }): PromptMessages {
   const userPayload = {
     title: assignment.title,
+    subject: assignment.subject ?? "",
+    classLevel: assignment.classLevel ?? "",
     questionTypes: assignment.questionTypes,
     numQuestions: assignment.numQuestions,
     totalMarks: assignment.totalMarks,

@@ -1,4 +1,14 @@
-# Render Blueprint — provisions API + Worker + Redis.
+# Render Blueprint — provisions API (running combined API+Worker) + Redis.
+#
+# Render's free tier no longer offers a separate background-worker service.
+# The Dockerfile defaults to "node dist/combined.js" which boots Express AND
+# the BullMQ worker in the same Node process. The architecture stays clean —
+# only the deployment topology changes vs the multi-process dev setup.
+#
+# To split them back when you upgrade:
+#   1. Override CMD on the existing service to "node dist/index.js"
+#   2. Add a second worker service with `dockerCommand: node dist/worker.js`
+#
 # Mongo is expected to be a managed MongoDB Atlas cluster (free tier OK);
 # set MONGODB_URI in Render dashboard secrets.
 
@@ -30,38 +40,6 @@ services:
         value: gpt-4o-mini
       - key: JWT_SECRET
         generateValue: true
-      - key: JWT_EXPIRES_IN
-        value: 7d
-
-  - type: worker
-    name: vedaai-worker
-    runtime: docker
-    dockerfilePath: ./server/Dockerfile
-    dockerContext: ./server
-    dockerCommand: node dist/worker.js
-    plan: free
-    region: oregon
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: MONGODB_URI
-        sync: false
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: vedaai-redis
-          property: connectionString
-      - key: CLIENT_ORIGIN
-        sync: false
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: OPENAI_MODEL
-        value: gpt-4o-mini
-      - key: JWT_SECRET
-        fromService:
-          type: web
-          name: vedaai-api
-          envVarKey: JWT_SECRET
       - key: JWT_EXPIRES_IN
         value: 7d
 

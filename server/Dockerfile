@@ -24,5 +24,8 @@ COPY --from=build /app/dist ./dist
 RUN mkdir -p /app/uploads
 VOLUME ["/app/uploads"]
 EXPOSE 4000
-# Default to API. The Render worker service overrides CMD to "node dist/worker.js"
-CMD ["node", "dist/index.js"]
+# Default to the combined API + worker entry point so we fit on Render's free
+# tier (which no longer offers a separate background-worker service type).
+# To split them back into two services later, override CMD on each service to
+# "node dist/index.js" (API) and "node dist/worker.js" (worker).
+CMD ["node", "dist/combined.js"]

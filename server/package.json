@@ -9,6 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "start:worker": "node dist/worker.js",
+    "start:combined": "node dist/combined.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },

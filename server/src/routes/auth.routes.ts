@@ -4,6 +4,7 @@ import { z, ZodError } from "zod";
 import { User } from "../models/User.js";
 import { signJwt } from "../lib/jwt.js";
 import { requireAuth } from "../middleware/requireAuth.js";
+import { authRateLimit } from "../middleware/rateLimit.js";
 
 export const authRouter = Router();
 
@@ -18,7 +19,7 @@ const LoginSchema = z.object({
   password: z.string().min(1, "password is required"),
 });
 
-authRouter.post("/signup", async (req: Request, res: Response) => {
+authRouter.post("/signup", authRateLimit, async (req: Request, res: Response) => {
   try {
     const data = SignupSchema.parse(req.body);
     const existing = await User.findOne({ email: data.email });
@@ -45,7 +46,7 @@ authRouter.post("/signup", async (req: Request, res: Response) => {
   }
 });
 
-authRouter.post("/login", async (req: Request, res: Response) => {
+authRouter.post("/login", authRateLimit, async (req: Request, res: Response) => {
   try {
     const data = LoginSchema.parse(req.body);
     const user = await User.findOne({ email: data.email });

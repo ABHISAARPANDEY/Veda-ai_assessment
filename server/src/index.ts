@@ -9,6 +9,7 @@ import { authRouter } from "./routes/auth.routes.js";
 import { userRouter } from "./routes/user.routes.js";
 import { groupsRouter } from "./routes/groups.routes.js";
 import { attachBusListener, initSocketServer } from "./sockets/io.js";
+import { apiRateLimit } from "./middleware/rateLimit.js";
 
 async function main(): Promise<void> {
   await connectMongo();
@@ -16,6 +17,7 @@ async function main(): Promise<void> {
   const app = express();
   app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
   app.use(express.json({ limit: "1mb" }));
+  app.use("/api", apiRateLimit);
 
   app.get("/api/health", (_req, res) => res.json({ ok: true }));
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

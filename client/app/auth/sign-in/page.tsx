@@ -24,19 +24,33 @@ function SignInForm() {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-    const res = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-      callbackUrl,
-    });
-    setSubmitting(false);
-    if (res?.error) {
-      setError("Invalid email or password");
-      return;
+    try {
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+        callbackUrl,
+      });
+      if (res?.error) {
+        setError("Invalid email or password");
+        return;
+      }
+      if (res?.ok === false) {
+        setError("Sign-in failed. The server may be waking up — please try again.");
+        return;
+      }
+      router.push(callbackUrl);
+      router.refresh();
+    } catch (err) {
+      // signIn() rejects on network/timeout (Vercel function timeout during
+      // Render cold start, etc). Without this catch the button hangs forever.
+      console.error("[sign-in]", err);
+      setError(
+        "The server is waking up (first request after idle can take ~30s). Please try again."
+      );
+    } finally {
+      setSubmitting(false);
     }
-    router.push(callbackUrl);
-    router.refresh();
   }
 
   return (

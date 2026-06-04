@@ -23,21 +23,36 @@ export default function SignUpPage() {
       return;
     }
     setSubmitting(true);
-    const res = await signupUser({ name, email, password });
-    if (!res.ok) {
-      setError(res.error);
+    try {
+      const res = await signupUser({ name, email, password });
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      // Auto sign-in. Wrapped so a timeout / network blip during the second
+      // call doesn't leave the button stuck on "Creating account…".
+      try {
+        const si = await signIn("credentials", { email, password, redirect: false });
+        if (si?.error || si?.ok === false) {
+          setError("Account created. Please sign in.");
+          setTimeout(() => router.push("/auth/sign-in"), 1500);
+          return;
+        }
+        router.push("/assignments");
+        router.refresh();
+      } catch (signInErr) {
+        console.error("[auto-sign-in]", signInErr);
+        setError("Account created. Please sign in.");
+        setTimeout(() => router.push("/auth/sign-in"), 1500);
+      }
+    } catch (err) {
+      console.error("[signup]", err);
+      setError(
+        "The server is waking up (first request after idle can take ~30s). Please try again."
+      );
+    } finally {
       setSubmitting(false);
-      return;
     }
-    // Auto sign-in
-    const si = await signIn("credentials", { email, password, redirect: false });
-    setSubmitting(false);
-    if (si?.error) {
-      setError("Signup ok but auto sign-in failed. Try sign-in.");
-      return;
-    }
-    router.push("/assignments");
-    router.refresh();
   }
 
   return (

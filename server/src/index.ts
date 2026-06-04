@@ -7,6 +7,7 @@ import { connectMongo } from "./config/db.js";
 import { assignmentsRouter } from "./routes/assignments.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { userRouter } from "./routes/user.routes.js";
+import { groupsRouter } from "./routes/groups.routes.js";
 import { attachBusListener, initSocketServer } from "./sockets/io.js";
 
 async function main(): Promise<void> {
@@ -21,6 +22,7 @@ async function main(): Promise<void> {
   app.use("/api/assignments", assignmentsRouter);
   app.use("/api/auth", authRouter);
   app.use("/api/user", userRouter);
+  app.use("/api/groups", groupsRouter);
 
   const httpServer = http.createServer(app);
   initSocketServer(httpServer);

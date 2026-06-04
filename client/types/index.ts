@@ -22,6 +22,7 @@ export interface Question {
   difficulty: Difficulty;
   marks: number;
   type: string;
+  answer: string;
 }
 
 export interface Section {

@@ -130,7 +130,7 @@ export default function NewAssignmentPage() {
         </div>
 
         <div>
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-sm font-semibold text-primary mb-3 items-center">
+          <div className="hidden lg:grid grid-cols-[1fr_auto_auto_auto] gap-4 text-sm font-semibold text-primary mb-3 items-center">
             <div>Question Type</div>
             <div className="w-6" />
             <div className="text-right pr-2">No. of Questions</div>
@@ -138,7 +138,7 @@ export default function NewAssignmentPage() {
           </div>
           <div className="space-y-3">
             {form.rows.map((r) => (
-              <div key={r.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center">
+              <div key={r.id} className="space-y-2 lg:space-y-0 lg:grid lg:grid-cols-[1fr_auto_auto_auto] gap-4 lg:items-center pb-3 border-b border-border lg:border-0 lg:pb-0">
                 <Select
                   value={r.typeKey}
                   options={QUESTION_OPTIONS}
@@ -146,24 +146,32 @@ export default function NewAssignmentPage() {
                     updateRow(r.id, { type: label, typeKey })
                   }
                 />
-                <button
-                  type="button"
-                  onClick={() => removeRow(r.id)}
-                  className="h-8 w-8 grid place-items-center rounded-full hover:bg-inset"
-                  aria-label="Remove row"
-                >
-                  <X className="h-4 w-4 text-secondary" />
-                </button>
-                <Stepper
-                  value={r.numQuestions}
-                  min={0}
-                  onChange={(v) => updateRow(r.id, { numQuestions: v })}
-                />
-                <Stepper
-                  value={r.marks}
-                  min={0}
-                  onChange={(v) => updateRow(r.id, { marks: v })}
-                />
+                <div className="flex items-center justify-between gap-3 lg:contents">
+                  <button
+                    type="button"
+                    onClick={() => removeRow(r.id)}
+                    className="h-8 w-8 grid place-items-center rounded-full hover:bg-inset lg:order-none"
+                    aria-label="Remove row"
+                  >
+                    <X className="h-4 w-4 text-secondary" />
+                  </button>
+                  <div className="flex items-center gap-2 lg:contents">
+                    <span className="text-xs text-secondary lg:hidden">Questions</span>
+                    <Stepper
+                      value={r.numQuestions}
+                      min={0}
+                      onChange={(v) => updateRow(r.id, { numQuestions: v })}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 lg:contents">
+                    <span className="text-xs text-secondary lg:hidden">Marks</span>
+                    <Stepper
+                      value={r.marks}
+                      min={0}
+                      onChange={(v) => updateRow(r.id, { marks: v })}
+                    />
+                  </div>
+                </div>
               </div>
             ))}
           </div>

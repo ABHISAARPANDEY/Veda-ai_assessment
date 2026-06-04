@@ -1,9 +1,16 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sparkles, AlertCircle } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { getSocket } from "../../lib/socket";
+import { getAssignment } from "../../lib/api";
 import { Button } from "./Button";
 import type { AssignmentStatus, QuestionPaperDTO } from "../../types";
+
+// Polling interval for the API fallback. Picks up status changes when socket
+// events are missed (e.g. socket connects after the worker already finished,
+// which happens on Render free-tier cold starts).
+const POLL_MS = 2500;
 
 export function GenerationOverlay({
   assignmentId,
@@ -12,14 +19,22 @@ export function GenerationOverlay({
   assignmentId: string;
   onCompleted: (id: string) => void;
 }) {
+  const { data: session } = useSession();
+  const token = (session as { backendToken?: string } | null)?.backendToken;
+
   const [status, setStatus] = useState<AssignmentStatus | "idle">("processing");
-  const [label, setLabel] = useState<string>("Queued");
+  const [label, setLabel] = useState<string>("Starting…");
   const [pct, setPct] = useState<number>(5);
   const [error, setError] = useState<string | null>(null);
 
+  // Refs so the polling effect can read the current status without re-running
+  const finishedRef = useRef(false);
+  const onCompletedRef = useRef(onCompleted);
+  onCompletedRef.current = onCompleted;
+
+  // Socket effect (live path — fast when events arrive normally)
   useEffect(() => {
     const socket = getSocket();
-
     const subscribe = () => socket.emit("subscribe", assignmentId);
     if (socket.connected) subscribe();
     socket.on("connect", subscribe);
@@ -34,9 +49,10 @@ export function GenerationOverlay({
       }
     };
     const onCompletedSocket = (p: { assignmentId: string; paper: QuestionPaperDTO }) => {
-      if (p.assignmentId === assignmentId) {
+      if (p.assignmentId === assignmentId && !finishedRef.current) {
+        finishedRef.current = true;
         setStatus("completed");
-        onCompleted(assignmentId);
+        onCompletedRef.current(assignmentId);
       }
     };
     const onFailed = (p: { assignmentId: string; error: string }) => {
@@ -57,7 +73,48 @@ export function GenerationOverlay({
       socket.off("job:completed", onCompletedSocket);
       socket.off("job:failed", onFailed);
     };
-  }, [assignmentId, onCompleted]);
+  }, [assignmentId]);
+
+  // Polling fallback (safety net — catches up when socket events were missed)
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const tick = async () => {
+      if (cancelled || finishedRef.current) return;
+      try {
+        const data = await getAssignment(assignmentId, token);
+        if (cancelled) return;
+        const s = data.assignment.status as AssignmentStatus;
+        setStatus((prev) => (prev === "failed" ? prev : s));
+        if (s === "completed" && !finishedRef.current) {
+          finishedRef.current = true;
+          // small delay so the user briefly sees "Done" before the route change
+          setLabel("Done");
+          setPct(100);
+          setTimeout(() => onCompletedRef.current(assignmentId), 250);
+          return;
+        }
+        if (s === "failed" && !finishedRef.current) {
+          finishedRef.current = true;
+          setStatus("failed");
+          setError(data.assignment.status === "failed" ? "Generation failed on the server" : null);
+          return;
+        }
+      } catch {
+        // network/cold-start hiccup — just try again next tick
+      }
+      if (!cancelled) timer = setTimeout(tick, POLL_MS);
+    };
+
+    // First tick after a short delay so socket has a moment to deliver its first event
+    timer = setTimeout(tick, 1500);
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [assignmentId, token]);
 
   return (
     <div className="fixed inset-0 bg-primary/40 backdrop-blur-sm grid place-items-center z-30 px-4">
@@ -78,6 +135,9 @@ export function GenerationOverlay({
               />
             </div>
             <div className="mt-2 text-right text-xs text-secondary">{pct}%</div>
+            <p className="mt-4 text-[11px] text-secondary text-center">
+              First request after idle can take ~30s while the API wakes up.
+            </p>
           </>
         )}
         {status === "failed" && (

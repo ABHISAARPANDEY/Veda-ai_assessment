@@ -23,3 +23,7 @@ yarn-debug.log*
 .idea/
 # data volumes (docker)
 .data/
+
+# Internal planning artifacts — not part of the public submission
+docs/superpowers/
+docs/loom-script.md

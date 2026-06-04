@@ -20,7 +20,7 @@ Built end-to-end against the [VedaAI hiring assignment brief](#-assignment-brief
 
 Sign up with any email — the demo flow takes ~30 seconds from blank account to generated paper.
 
-> 🎥 **Loom walkthrough:** *(add link after recording — script is in `docs/loom-script.md`)*
+> 🎥 **Loom walkthrough:** *(add link after recording)*
 
 ## Screenshots
 
@@ -231,8 +231,6 @@ The result: **even if the model returns malformed JSON, slightly off marks, or w
 /.github/workflows/ci.yml    Typecheck + tests on push/PR
 /docs/
   /screenshots/              13 PNGs (desktop + mobile)
-  /loom-script.md            Walkthrough script (use it to record yourself)
-  /superpowers/plans/        Phase-by-phase build plans (1–3)
 
 /server
   Dockerfile                 Multi-stage build for Render

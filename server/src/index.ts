@@ -33,6 +33,20 @@ async function main(): Promise<void> {
   httpServer.listen(env.PORT, () => {
     console.log(`[api] listening on http://localhost:${env.PORT}`);
   });
+
+  const shutdown = async (signal: string) => {
+    console.log(`[api] received ${signal}, shutting down...`);
+    httpServer.close();
+    try {
+      const mongoose = await import("mongoose");
+      await mongoose.default.disconnect();
+    } catch {
+      /* ignore */
+    }
+    process.exit(0);
+  };
+  process.on("SIGINT", () => void shutdown("SIGINT"));
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
 }
 
 main().catch((err) => {

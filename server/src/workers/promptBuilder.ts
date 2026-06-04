@@ -29,7 +29,8 @@ Output rules (these are not optional):
           "text": "<the full question>",
           "difficulty": "easy" | "medium" | "hard",
           "marks": <positive number>,
-          "type": "<one of the requested question types, e.g. 'mcq', 'short', 'long'>"
+          "type": "<one of the requested question types, e.g. 'mcq', 'short', 'long'>",
+          "answer": "<the model's answer to this question, 1-3 sentences>"
         }
       ]
     }
@@ -42,6 +43,7 @@ Generation rules:
 - Every "difficulty" value must be exactly one of: "easy", "medium", "hard". No other values.
 - Every "type" value must be one of the requested question types.
 - Each question must have non-empty "text".
+- Each question must have a non-empty "answer" — the correct answer to the question, written as a short explanation (1-3 sentences).
 - Each section must have at least one question.
 - Question and section ids should be short and stable (e.g. "A", "B"; "A1", "A2", "B1").
 - If source material is provided, base questions on it. Otherwise generate questions appropriate to the title/topic.`;

@@ -9,6 +9,7 @@ export const QuestionSchema = z.object({
   difficulty: DifficultyEnum,
   marks: z.number().positive("marks must be positive"),
   type: z.string().min(1, "type is required"),
+  answer: z.string().min(1, "answer is required"),
 });
 
 export const SectionSchema = z.object({

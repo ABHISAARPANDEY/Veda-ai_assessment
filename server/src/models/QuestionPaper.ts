@@ -7,6 +7,7 @@ const QuestionSchema = new Schema(
     difficulty: { type: String, enum: ["easy", "medium", "hard"], required: true },
     marks: { type: Number, required: true },
     type: { type: String, required: true },
+    answer: { type: String, default: "" },
   },
   { _id: false }
 );

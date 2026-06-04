@@ -6,36 +6,48 @@ import { QuestionPaper } from "../models/QuestionPaper.js";
 import { generationQueue } from "../queues/generation.queue.js";
 import { CreateAssignmentSchema } from "../validation/assignment.schema.js";
 import { requireAuth, attachAuth } from "../middleware/requireAuth.js";
+import { uploadSourceFile } from "../lib/upload.js";
+import { extractText } from "../lib/extractText.js";
 
 export const assignmentsRouter = Router();
 
-assignmentsRouter.post("/", requireAuth, async (req: Request, res: Response) => {
-  try {
-    const data = CreateAssignmentSchema.parse(req.body);
-    const assignment = await Assignment.create({
-      ...data,
-      userId: req.user!.sub,
-      status: "pending",
-    });
-
-    await generationQueue.add(
-      "generate",
-      { assignmentId: assignment._id!.toString() },
-      { jobId: assignment._id!.toString() }
-    );
-
-    return res.status(201).json({ assignment });
-  } catch (err) {
-    if (err instanceof ZodError) {
-      return res.status(400).json({
-        error: "Validation failed",
-        details: err.flatten(),
+assignmentsRouter.post(
+  "/",
+  requireAuth,
+  uploadSourceFile.single("source"),
+  async (req: Request, res: Response) => {
+    try {
+      // If a file was uploaded, extract text and inject as sourceText
+      if (req.file) {
+        const extracted = await extractText(req.file.buffer, req.file.mimetype);
+        if (extracted) req.body.sourceText = extracted;
+      }
+      const data = CreateAssignmentSchema.parse(req.body);
+      const assignment = await Assignment.create({
+        ...data,
+        userId: req.user!.sub,
+        status: "pending",
       });
+
+      await generationQueue.add(
+        "generate",
+        { assignmentId: assignment._id!.toString() },
+        { jobId: assignment._id!.toString() }
+      );
+
+      return res.status(201).json({ assignment });
+    } catch (err) {
+      if (err instanceof ZodError) {
+        return res.status(400).json({
+          error: "Validation failed",
+          details: err.flatten(),
+        });
+      }
+      console.error("[POST /api/assignments] error:", err);
+      return res.status(500).json({ error: "Internal server error" });
     }
-    console.error("[POST /api/assignments] error:", err);
-    return res.status(500).json({ error: "Internal server error" });
   }
-});
+);
 
 assignmentsRouter.get("/", attachAuth, async (req: Request, res: Response) => {
   const filter: Record<string, unknown> = {};

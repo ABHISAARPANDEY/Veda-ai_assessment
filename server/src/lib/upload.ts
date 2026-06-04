@@ -32,3 +32,27 @@ export const uploadImage = multer({
   fileFilter: imageFilter,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
+
+const inMemoryStorage = multer.memoryStorage();
+
+function sourceFileFilter(
+  _req: Express.Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback
+) {
+  const ok =
+    file.mimetype === "application/pdf" ||
+    file.mimetype === "text/plain" ||
+    file.mimetype === "text/markdown";
+  if (!ok) {
+    cb(new Error("only PDF or text files allowed"));
+    return;
+  }
+  cb(null, true);
+}
+
+export const uploadSourceFile = multer({
+  storage: inMemoryStorage,
+  fileFilter: sourceFileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+});

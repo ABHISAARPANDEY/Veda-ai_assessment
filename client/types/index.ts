@@ -9,6 +9,8 @@ export interface AssignmentDTO {
   totalMarks: number;
   instructions?: string;
   sourceText?: string;
+  classLevel?: string;
+  subject?: string;
   status: AssignmentStatus;
   createdAt: string;
   updatedAt: string;

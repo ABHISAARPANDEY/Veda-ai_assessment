@@ -9,6 +9,8 @@ export interface CreateAssignmentBody {
   questionTypes: string[];
   instructions?: string;
   dueDate?: string;
+  classLevel?: string;
+  subject?: string;
 }
 
 function authHeader(token?: string | null): Record<string, string> {
@@ -33,6 +35,8 @@ export async function createAssignment(
     fd.append("questionTypes", JSON.stringify(body.questionTypes));
     if (body.instructions) fd.append("instructions", body.instructions);
     if (body.dueDate) fd.append("dueDate", body.dueDate);
+    if (body.classLevel) fd.append("classLevel", body.classLevel);
+    if (body.subject) fd.append("subject", body.subject);
     fd.append("source", file);
     payload = fd;
     // Note: do NOT set Content-Type; the browser sets it with boundary

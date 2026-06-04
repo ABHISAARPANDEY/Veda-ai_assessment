@@ -15,6 +15,8 @@ export interface FormState {
   file: File | null;          // transmitted as multipart "source" field (Phase 4 Wave E)
   rows: QuestionRow[];
   instructions: string;
+  classLevel: string;
+  subject: string;
 }
 
 export interface ValidationErrors {
@@ -40,6 +42,8 @@ interface Store {
   setDueDate: (s: string) => void;
   setFile: (f: File | null) => void;
   setInstructions: (s: string) => void;
+  setClassLevel: (s: string) => void;
+  setSubject: (s: string) => void;
   addRow: () => void;
   removeRow: (rowId: string) => void;
   updateRow: (rowId: string, patch: Partial<QuestionRow>) => void;
@@ -56,6 +60,8 @@ const initialForm: FormState = {
   file: null,
   rows: DEFAULT_ROWS,
   instructions: "",
+  classLevel: "Class 10",
+  subject: "",
 };
 
 export const useAssignmentStore = create<Store>((set, get) => ({
@@ -67,6 +73,8 @@ export const useAssignmentStore = create<Store>((set, get) => ({
   setDueDate: (s) => set((st) => ({ form: { ...st.form, dueDate: s } })),
   setFile: (f) => set((st) => ({ form: { ...st.form, file: f } })),
   setInstructions: (s) => set((st) => ({ form: { ...st.form, instructions: s } })),
+  setClassLevel: (s) => set((st) => ({ form: { ...st.form, classLevel: s } })),
+  setSubject: (s) => set((st) => ({ form: { ...st.form, subject: s } })),
 
   addRow: () =>
     set((st) => ({
@@ -127,6 +135,8 @@ export const useAssignmentStore = create<Store>((set, get) => ({
       totalMarks: form.rows.reduce((a, r) => a + r.numQuestions * r.marks, 0),
       instructions: form.instructions || undefined,
       dueDate: form.dueDate || undefined,
+      classLevel: form.classLevel || undefined,
+      subject: form.subject.trim() || undefined,
     };
     const res = await createAssignment(body, token, form.file);
     set({ submitting: false });

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getAssignment } from "../../../../lib/api";
 import { auth } from "../../../../auth";
+import { getMe } from "../../../../lib/authClient";
 import { persona } from "../../../../lib/persona";
 import { Card } from "../../../../components/ui/Card";
 import { PaperBanner } from "../../../../components/ui/PaperBanner";
@@ -20,6 +21,10 @@ export default async function AssignmentPaperPage({
   const { id } = await params;
   const session = await auth();
   const token = (session as any)?.backendToken as string | undefined;
+
+  // Fetch fresh user data (settings changes aren't in the session JWT)
+  const me = token ? await getMe(token) : null;
+
   let data: Awaited<ReturnType<typeof getAssignment>>;
   try {
     data = await getAssignment(id, token);
@@ -37,12 +42,15 @@ export default async function AssignmentPaperPage({
   }
 
   const { assignment, paper } = data;
-  const sessionName = session?.user?.name?.trim();
-  const firstName = sessionName ? sessionName.split(/\s+/)[0] : persona.user.firstName;
-  const banner = `Certainly, ${firstName}! Here is your customized Question Paper for "${assignment.title}":`;
 
-  const userSchool = ((session?.user as any)?.school as string | undefined)?.trim();
-  const schoolFullName = userSchool || persona.school.fullName;
+  const userName = me?.name?.trim() || session?.user?.name?.trim() || "there";
+  const firstName = userName.split(/\s+/)[0];
+  const schoolFullName = me?.school?.trim() || persona.school.fullName;
+  const subject = assignment.subject?.trim() || persona.paperDefaults.subject;
+  const classLevel = assignment.classLevel?.trim() || persona.paperDefaults.class;
+  const timeAllowed = persona.paperDefaults.timeAllowed;
+
+  const banner = `Certainly, ${firstName}! Here is your customized Question Paper for "${assignment.title}":`;
 
   // numbering continues across sections
   let runningIndex = 1;
@@ -56,9 +64,9 @@ export default async function AssignmentPaperPage({
             assignment={assignment}
             paper={paper}
             schoolFullName={schoolFullName}
-            subject={persona.paperDefaults.subject}
-            className={persona.paperDefaults.class}
-            timeAllowed={persona.paperDefaults.timeAllowed}
+            subject={subject}
+            className={classLevel}
+            timeAllowed={timeAllowed}
           />
         }
       />
@@ -66,7 +74,13 @@ export default async function AssignmentPaperPage({
         <RegenerateButton assignmentId={id} />
       </div>
       <Card className="p-8 lg:p-12">
-        <PaperHeader totalMarks={assignment.totalMarks} schoolFullName={schoolFullName} />
+        <PaperHeader
+          totalMarks={assignment.totalMarks}
+          schoolFullName={schoolFullName}
+          subject={subject}
+          className={classLevel}
+          timeAllowed={timeAllowed}
+        />
         <div className="mt-8 space-y-8">
           {paper.sections.map((section) => {
             const block = (

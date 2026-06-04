@@ -22,6 +22,25 @@ const QUESTION_OPTIONS = [
   { label: "Long Answer Questions", value: "long", typeKey: "long" },
 ];
 
+const CLASS_LEVEL_OPTIONS = [
+  { label: "Class 1", value: "Class 1", typeKey: "Class 1" },
+  { label: "Class 2", value: "Class 2", typeKey: "Class 2" },
+  { label: "Class 3", value: "Class 3", typeKey: "Class 3" },
+  { label: "Class 4", value: "Class 4", typeKey: "Class 4" },
+  { label: "Class 5", value: "Class 5", typeKey: "Class 5" },
+  { label: "Class 6", value: "Class 6", typeKey: "Class 6" },
+  { label: "Class 7", value: "Class 7", typeKey: "Class 7" },
+  { label: "Class 8", value: "Class 8", typeKey: "Class 8" },
+  { label: "Class 9", value: "Class 9", typeKey: "Class 9" },
+  { label: "Class 10", value: "Class 10", typeKey: "Class 10" },
+  { label: "Class 11", value: "Class 11", typeKey: "Class 11" },
+  { label: "Class 12", value: "Class 12", typeKey: "Class 12" },
+  { label: "JEE Main", value: "JEE Main", typeKey: "JEE Main" },
+  { label: "JEE Advanced", value: "JEE Advanced", typeKey: "JEE Advanced" },
+  { label: "NEET", value: "NEET", typeKey: "NEET" },
+  { label: "General", value: "General", typeKey: "General" },
+];
+
 export default function NewAssignmentPage() {
   const router = useRouter();
   const { data: session } = useSession();
@@ -30,6 +49,8 @@ export default function NewAssignmentPage() {
   const setDueDate = useAssignmentStore((s) => s.setDueDate);
   const setFile = useAssignmentStore((s) => s.setFile);
   const setInstructions = useAssignmentStore((s) => s.setInstructions);
+  const setClassLevel = useAssignmentStore((s) => s.setClassLevel);
+  const setSubject = useAssignmentStore((s) => s.setSubject);
   const addRow = useAssignmentStore((s) => s.addRow);
   const removeRow = useAssignmentStore((s) => s.removeRow);
   const updateRow = useAssignmentStore((s) => s.updateRow);
@@ -78,6 +99,27 @@ export default function NewAssignmentPage() {
             className="form-input w-full h-12 rounded-xl bg-card border border-border px-4 text-sm placeholder:text-muted focus:border-primary focus:ring-0"
           />
           {errors.title && <div className="mt-1 text-xs text-danger">{errors.title}</div>}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-semibold block mb-2">Class / Level</label>
+            <Select
+              value={form.classLevel}
+              options={CLASS_LEVEL_OPTIONS}
+              onChange={(_label, value) => setClassLevel(value)}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-semibold block mb-2">Subject (optional)</label>
+            <input
+              type="text"
+              value={form.subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="e.g. Physics, English, Math"
+              className="form-input w-full h-11 rounded-xl bg-card border border-border px-4 text-sm placeholder:text-muted focus:border-primary focus:ring-0"
+            />
+          </div>
         </div>
 
         <FileDropzone onFile={setFile} />

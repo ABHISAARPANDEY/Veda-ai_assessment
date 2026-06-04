@@ -7,6 +7,7 @@ import { PaperBanner } from "../../../../components/ui/PaperBanner";
 import { PaperHeader } from "../../../../components/ui/PaperHeader";
 import { QuestionList } from "../../../../components/ui/QuestionList";
 import { AnswerKey } from "../../../../components/ui/AnswerKey";
+import { DownloadPdfButton } from "../../../../components/pdf/DownloadPdfButton";
 
 export const dynamic = "force-dynamic";
 
@@ -37,14 +38,29 @@ export default async function AssignmentPaperPage({
   const { assignment, paper } = data;
   const banner = `Certainly, ${persona.user.firstName}! Here are customized Question Paper for "${assignment.title}":`;
 
+  const userSchool = ((session?.user as any)?.school as string | undefined)?.trim();
+  const schoolFullName = userSchool || persona.school.fullName;
+
   // numbering continues across sections
   let runningIndex = 1;
 
   return (
     <div className="space-y-6 pt-2 pb-12">
-      <PaperBanner message={banner} />
+      <PaperBanner
+        message={banner}
+        rightSlot={
+          <DownloadPdfButton
+            assignment={assignment}
+            paper={paper}
+            schoolFullName={schoolFullName}
+            subject={persona.paperDefaults.subject}
+            className={persona.paperDefaults.class}
+            timeAllowed={persona.paperDefaults.timeAllowed}
+          />
+        }
+      />
       <Card className="p-8 lg:p-12">
-        <PaperHeader totalMarks={assignment.totalMarks} />
+        <PaperHeader totalMarks={assignment.totalMarks} schoolFullName={schoolFullName} />
         <div className="mt-8 space-y-8">
           {paper.sections.map((section) => {
             const block = (

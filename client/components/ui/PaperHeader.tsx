@@ -1,9 +1,16 @@
 import { persona } from "../../lib/persona";
 
-export function PaperHeader({ totalMarks }: { totalMarks: number }) {
+export function PaperHeader({
+  totalMarks,
+  schoolFullName,
+}: {
+  totalMarks: number;
+  schoolFullName?: string;
+}) {
+  const school = schoolFullName ?? persona.school.fullName;
   return (
     <div className="space-y-1 text-center">
-      <h1 className="text-lg font-bold">{persona.school.fullName}</h1>
+      <h1 className="text-lg font-bold">{school}</h1>
       <div className="text-sm">Subject: {persona.paperDefaults.subject}</div>
       <div className="text-sm">Class: {persona.paperDefaults.class}</div>
       <div className="mt-4 flex justify-between text-sm">

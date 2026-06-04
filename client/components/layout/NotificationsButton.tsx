@@ -79,7 +79,7 @@ export function NotificationsButton() {
         )}
       </button>
       {open && (
-        <div className="absolute top-12 right-0 bg-card shadow-cardLg rounded-2xl w-80 z-30 overflow-hidden">
+        <div className="absolute top-12 right-0 bg-card shadow-cardLg rounded-2xl w-80 max-w-[calc(100vw-2rem)] z-30 overflow-hidden">
           <div className="px-4 py-3 border-b border-border flex items-center justify-between">
             <div className="font-semibold text-sm">Notifications</div>
             <Link href="/assignments" onClick={() => setOpen(false)} className="text-xs text-secondary hover:text-primary">

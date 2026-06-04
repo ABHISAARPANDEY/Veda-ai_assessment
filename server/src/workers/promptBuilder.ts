@@ -23,7 +23,8 @@ Output rules (these are not optional):
           "difficulty": "easy" | "medium" | "hard",
           "marks": <positive number>,
           "type": "<backend key e.g. 'mcq', 'short', 'diagram', 'numerical', 'long'>",
-          "answer": "<the model's answer to this question, 1-3 sentences>"
+          "options": ["<option a>", "<option b>", "<option c>", "<option d>"],
+          "answer": "<the correct answer; for mcq, name the correct option, e.g. 'The correct answer is (b) ...'>"
         }
       ]
     }
@@ -37,6 +38,8 @@ Generation rules:
   - Set every question's "type" field to the entry's "type"
   - Set every question's "marks" to the entry's "marksPerQuestion"
 - If "questionBreakdown" is NOT provided, fall back to generating EXACTLY the requested numQuestions distributed across logical sections, with marks summing to totalMarks.
+- For every question with type "mcq", the "options" array MUST contain EXACTLY 4 plausible option strings (no leading "(a)" or "a)" prefixes — just the option text; the UI will render the (a)-(d) labels). The "answer" field for mcq must clearly identify the correct option (e.g., "The correct answer is (b) Newton" or "(c) — because…").
+- For all OTHER question types (short, long, diagram, numerical), set "options" to an empty array [].
 - If "classLevel" is provided (e.g. "Class 5", "Class 12", "JEE Main", "JEE Advanced", "NEET"), calibrate question difficulty and depth to that level. If "subject" is provided, ensure questions stay within that subject area.
 - Every "difficulty" value must be exactly one of: "easy", "medium", "hard". No other values.
 - Each question must have non-empty "text" and a non-empty "answer" (correct answer, 1-3 sentences).

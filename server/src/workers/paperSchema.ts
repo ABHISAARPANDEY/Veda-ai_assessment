@@ -10,6 +10,7 @@ export const QuestionSchema = z.object({
   marks: z.number().positive("marks must be positive"),
   type: z.string().min(1, "type is required"),
   answer: z.string().min(1, "answer is required"),
+  options: z.array(z.string().min(1)).default([]),
 });
 
 export const SectionSchema = z.object({

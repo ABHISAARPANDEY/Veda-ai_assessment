@@ -8,6 +8,7 @@ const QuestionSchema = new Schema(
     marks: { type: Number, required: true },
     type: { type: String, required: true },
     answer: { type: String, default: "" },
+    options: { type: [String], default: [] },
   },
   { _id: false }
 );

@@ -7,6 +7,7 @@ export interface Question {
   marks: number;
   type: string;
   answer: string;
+  options: string[];
 }
 
 export interface Section {

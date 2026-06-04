@@ -37,7 +37,9 @@ export default async function AssignmentPaperPage({
   }
 
   const { assignment, paper } = data;
-  const banner = `Certainly, ${persona.user.firstName}! Here are customized Question Paper for "${assignment.title}":`;
+  const sessionName = session?.user?.name?.trim();
+  const firstName = sessionName ? sessionName.split(/\s+/)[0] : persona.user.firstName;
+  const banner = `Certainly, ${firstName}! Here is your customized Question Paper for "${assignment.title}":`;
 
   const userSchool = ((session?.user as any)?.school as string | undefined)?.trim();
   const schoolFullName = userSchool || persona.school.fullName;

@@ -1,10 +1,33 @@
 import { Router, type Request, type Response } from "express";
 import { z, ZodError } from "zod";
+import { isValidObjectId } from "mongoose";
 import { User } from "../models/User.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { uploadImageMemory } from "../lib/upload.js";
 
 export const userRouter = Router();
+
+// Separate public router for avatar bytes. <img src=...> can't send Bearer
+// auth headers, and avatars are not sensitive data — anyone with the userId
+// can view that user's avatar. Mounted at /api/users in index.ts/app.ts.
+export const publicUserRouter = Router();
+
+publicUserRouter.get("/users/:id/avatar", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  if (!isValidObjectId(id)) return res.status(400).send();
+  const user = await User.findById(id).select("avatarUrl updatedAt").lean();
+  if (!user || !user.avatarUrl) return res.status(404).send();
+
+  // The avatar is stored as a data URL "data:image/png;base64,<...>"
+  const match = /^data:([^;]+);base64,(.+)$/.exec(user.avatarUrl);
+  if (!match) return res.status(404).send();
+  const mime = match[1];
+  const buffer = Buffer.from(match[2], "base64");
+
+  res.setHeader("Content-Type", mime);
+  res.setHeader("Cache-Control", "public, max-age=300, must-revalidate");
+  return res.send(buffer);
+});
 
 const UpdateMeSchema = z.object({
   name: z.string().trim().min(1).optional(),

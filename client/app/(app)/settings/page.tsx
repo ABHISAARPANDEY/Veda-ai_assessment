@@ -76,11 +76,18 @@ export default function SettingsPage() {
     }
     setUser(res.user);
     setMessage("Avatar updated");
+    // Push a TINY HTTP URL into the session (not the data URL — that would
+    // balloon the cookie past Vercel's header limit). Cache-bust by appending
+    // a timestamp so other tabs see the new avatar immediately.
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+    const httpAvatar = res.user.avatarUrl
+      ? `${apiUrl}/api/users/${res.user._id}/avatar?v=${Date.now()}`
+      : null;
     await update({
       user: {
         name: res.user.name,
         school: res.user.school,
-        image: res.user.avatarUrl,
+        image: httpAvatar,
       },
     } as Parameters<typeof update>[0]);
     router.refresh();

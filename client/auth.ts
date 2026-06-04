@@ -23,11 +23,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token: string;
           user: { _id: string; email: string; name: string; avatarUrl: string; school: string };
         };
+        // CRITICAL: never put the avatarUrl directly into session — it's a
+        // base64 data URL (potentially MBs). The session JWT lives in a cookie
+        // and Vercel rejects requests with headers >8KB. Instead, store a tiny
+        // HTTP URL pointing at the public avatar endpoint.
+        const image = data.user.avatarUrl
+          ? `${API}/api/users/${data.user._id}/avatar`
+          : null;
         return {
           id: data.user._id,
           email: data.user.email,
           name: data.user.name,
-          image: data.user.avatarUrl || null,
+          image,
           // Stash the backend JWT on the user object so it's available in callbacks
           backendToken: data.token,
           school: data.user.school,
@@ -56,7 +63,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           school?: string | null;
         };
         if (typeof u.name === "string") token.name = u.name;
-        if (typeof u.image === "string" || u.image === null) token.picture = u.image ?? undefined;
+        // Reject anything that smells like a base64 data URL — those would
+        // balloon the cookie past Vercel's header limit.
+        if (typeof u.image === "string" && !u.image.startsWith("data:")) {
+          token.picture = u.image;
+        } else if (u.image === null) {
+          token.picture = undefined;
+        }
         if (typeof u.school === "string") token.school = u.school;
       }
       return token;

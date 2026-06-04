@@ -1,9 +1,11 @@
+import { redirect } from "next/navigation";
+import { auth } from "../../auth";
 import { listAssignments } from "../../lib/api";
 import { AppShell } from "../../components/layout/AppShell";
 
-async function safeCount(): Promise<number> {
+async function safeCount(token?: string | null): Promise<number> {
   try {
-    const items = await listAssignments();
+    const items = await listAssignments(token);
     return items.length;
   } catch {
     return 0;
@@ -11,7 +13,12 @@ async function safeCount(): Promise<number> {
 }
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const count = await safeCount();
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/auth/sign-in");
+  }
+  const token = (session as any).backendToken as string | undefined;
+  const count = await safeCount(token);
   return (
     <AppShell breadcrumb="Assignment" assignmentsCount={count}>
       {children}

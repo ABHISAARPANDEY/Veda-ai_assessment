@@ -11,15 +11,20 @@ export interface CreateAssignmentBody {
   dueDate?: string;
 }
 
+function authHeader(token?: string | null): Record<string, string> {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export async function createAssignment(
-  body: CreateAssignmentBody
+  body: CreateAssignmentBody,
+  token?: string | null
 ): Promise<
   | { ok: true; assignment: AssignmentDTO }
   | { ok: false; error: string; details?: unknown }
 > {
   const res = await fetch(`${API}/api/assignments`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeader(token) },
     body: JSON.stringify(body),
   });
   const data = await res.json();
@@ -29,17 +34,24 @@ export async function createAssignment(
   return { ok: true, assignment: data.assignment };
 }
 
-export async function listAssignments(): Promise<AssignmentDTO[]> {
-  const res = await fetch(`${API}/api/assignments`, { cache: "no-store" });
+export async function listAssignments(token?: string | null): Promise<AssignmentDTO[]> {
+  const res = await fetch(`${API}/api/assignments`, {
+    cache: "no-store",
+    headers: { ...authHeader(token) },
+  });
   if (!res.ok) throw new Error(`listAssignments failed: ${res.status}`);
   const data = (await res.json()) as { items: AssignmentDTO[] };
   return data.items;
 }
 
 export async function getAssignment(
-  id: string
+  id: string,
+  token?: string | null
 ): Promise<{ assignment: AssignmentDTO; paper: QuestionPaperDTO | null }> {
-  const res = await fetch(`${API}/api/assignments/${id}`, { cache: "no-store" });
+  const res = await fetch(`${API}/api/assignments/${id}`, {
+    cache: "no-store",
+    headers: { ...authHeader(token) },
+  });
   if (!res.ok) throw new Error(`getAssignment failed: ${res.status}`);
   return (await res.json()) as { assignment: AssignmentDTO; paper: QuestionPaperDTO | null };
 }

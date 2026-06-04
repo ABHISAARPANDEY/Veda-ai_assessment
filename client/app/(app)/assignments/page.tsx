@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Filter, Plus, Search } from "lucide-react";
 import { listAssignments } from "../../../lib/api";
+import { auth } from "../../../auth";
 import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { EmptyState } from "../../../components/ui/EmptyState";
@@ -9,7 +10,9 @@ import { AssignmentCard } from "../../../components/ui/AssignmentCard";
 export const dynamic = "force-dynamic";
 
 export default async function AssignmentsPage() {
-  const items = await listAssignments().catch(() => []);
+  const session = await auth();
+  const token = (session as any)?.backendToken as string | undefined;
+  const items = await listAssignments(token).catch(() => []);
 
   if (items.length === 0) {
     return (

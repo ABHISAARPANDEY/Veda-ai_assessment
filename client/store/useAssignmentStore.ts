@@ -46,7 +46,7 @@ interface Store {
   totalQuestions: () => number;
   totalMarks: () => number;
   validate: () => ValidationErrors;
-  submit: () => Promise<{ ok: true; assignmentId: string } | { ok: false; error: string }>;
+  submit: (token?: string | null) => Promise<{ ok: true; assignmentId: string } | { ok: false; error: string }>;
   reset: () => void;
 }
 
@@ -113,7 +113,7 @@ export const useAssignmentStore = create<Store>((set, get) => ({
     return errs;
   },
 
-  submit: async () => {
+  submit: async (token) => {
     const { form, validate } = get();
     const errs = validate();
     if (Object.keys(errs).length > 0) {
@@ -128,7 +128,7 @@ export const useAssignmentStore = create<Store>((set, get) => ({
       instructions: form.instructions || undefined,
       dueDate: form.dueDate || undefined,
     };
-    const res = await createAssignment(body);
+    const res = await createAssignment(body, token);
     set({ submitting: false });
     if (!res.ok) {
       set({ submitError: res.error });

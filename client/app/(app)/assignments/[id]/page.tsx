@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getAssignment } from "../../../../lib/api";
+import { auth } from "../../../../auth";
 import { persona } from "../../../../lib/persona";
 import { Card } from "../../../../components/ui/Card";
 import { PaperBanner } from "../../../../components/ui/PaperBanner";
@@ -15,9 +16,11 @@ export default async function AssignmentPaperPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const session = await auth();
+  const token = (session as any)?.backendToken as string | undefined;
   let data: Awaited<ReturnType<typeof getAssignment>>;
   try {
-    data = await getAssignment(id);
+    data = await getAssignment(id, token);
   } catch {
     notFound();
   }

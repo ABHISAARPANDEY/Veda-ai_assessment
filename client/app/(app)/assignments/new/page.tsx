@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
 import { Button } from "../../../../components/ui/Button";
 import { Card } from "../../../../components/ui/Card";
@@ -23,6 +24,7 @@ const QUESTION_OPTIONS = [
 
 export default function NewAssignmentPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const form = useAssignmentStore((s) => s.form);
   const setTitle = useAssignmentStore((s) => s.setTitle);
   const setDueDate = useAssignmentStore((s) => s.setDueDate);
@@ -44,7 +46,7 @@ export default function NewAssignmentPage() {
     const errs = validate();
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
-    const res = await submit();
+    const res = await submit((session as any)?.backendToken);
     if (res.ok) setActiveId(res.assignmentId);
   }
 

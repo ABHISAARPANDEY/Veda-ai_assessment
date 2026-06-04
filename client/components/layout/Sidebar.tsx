@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   LayoutGrid,
   Users,
@@ -11,14 +12,12 @@ import {
   Sparkles,
 } from "lucide-react";
 import { VedaLogo } from "../icons/VedaLogo";
-import { persona } from "../../lib/persona";
 import { cn } from "../../lib/cn";
 
 interface NavItem {
   href: string;
   label: string;
   icon: React.ReactNode;
-  badge?: number;
 }
 
 const NAV: NavItem[] = [
@@ -31,8 +30,18 @@ const NAV: NavItem[] = [
 
 export function Sidebar({ assignmentsCount }: { assignmentsCount?: number }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+  const school = (session?.user as any)?.school || "Add your school in Settings";
+  const schoolInitials = school
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w: string) => w[0])
+    .join("")
+    .toUpperCase() || "VA";
 
   return (
     <aside className="hidden lg:flex flex-col w-[270px] shrink-0 bg-card rounded-2xl shadow-card my-4 ml-4 p-4">
@@ -84,11 +93,11 @@ export function Sidebar({ assignmentsCount }: { assignmentsCount?: number }) {
         </Link>
         <div className="flex items-center gap-3 bg-surface2 rounded-2xl p-3">
           <div className="h-9 w-9 rounded-full bg-inset grid place-items-center text-xs font-bold">
-            DPS
+            {schoolInitials}
           </div>
-          <div className="leading-tight">
-            <div className="text-sm font-semibold">{persona.school.name}</div>
-            <div className="text-xs text-secondary">{persona.school.location}</div>
+          <div className="leading-tight truncate">
+            <div className="text-sm font-semibold truncate">{school || "Your school"}</div>
+            <div className="text-xs text-secondary truncate">{session?.user?.email ?? ""}</div>
           </div>
         </div>
       </div>

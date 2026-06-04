@@ -126,6 +126,28 @@ export function buildPaperPdf(args: BuildPaperPdfArgs): Blob {
         doc.text(lines[li], margin, y);
         y += 11 * 1.4;
       }
+
+      // Render options (for MCQ) under the question, indented
+      if (q.options && q.options.length > 0) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        const letters = ["a", "b", "c", "d", "e", "f"];
+        for (let k = 0; k < q.options.length; k++) {
+          const letter = letters[k] ?? String(k + 1);
+          const optText = `(${letter}) ${q.options[k]}`;
+          const optLines = doc.splitTextToSize(optText, contentW - 24) as string[];
+          for (const line of optLines) {
+            ensureSpace(10 * 1.4);
+            doc.text(line, margin + 24, y);
+            y += 10 * 1.4;
+          }
+        }
+        // restore the body font/size
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        y += 2;
+      }
+
       y += 2;
       void prefixWidth;
     }

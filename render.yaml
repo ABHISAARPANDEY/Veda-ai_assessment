@@ -1,0 +1,72 @@
+# Render Blueprint — provisions API + Worker + Redis.
+# Mongo is expected to be a managed MongoDB Atlas cluster (free tier OK);
+# set MONGODB_URI in Render dashboard secrets.
+
+services:
+  - type: web
+    name: vedaai-api
+    runtime: docker
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: "4000"
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: vedaai-redis
+          property: connectionString
+      - key: CLIENT_ORIGIN
+        sync: false       # set to your Vercel URL, e.g. https://vedaai.vercel.app
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+
+  - type: worker
+    name: vedaai-worker
+    runtime: docker
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    dockerCommand: node dist/worker.js
+    plan: free
+    region: oregon
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: vedaai-redis
+          property: connectionString
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: vedaai-api
+          envVarKey: JWT_SECRET
+      - key: JWT_EXPIRES_IN
+        value: 7d
+
+  - type: redis
+    name: vedaai-redis
+    plan: free
+    region: oregon
+    ipAllowList: []      # private network only

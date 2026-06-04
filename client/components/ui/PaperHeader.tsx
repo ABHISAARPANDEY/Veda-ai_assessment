@@ -38,7 +38,6 @@ export function PaperHeader({
           Roll Number: <input className="paper-line" type="text" />
         </div>
         <div>
-          Class: {cls}{" "}
           Section: <input className="paper-line" type="text" />
         </div>
       </div>

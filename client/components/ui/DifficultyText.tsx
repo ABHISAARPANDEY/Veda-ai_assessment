@@ -1,5 +1,4 @@
 import type { Difficulty } from "../../types";
-import { cn } from "../../lib/cn";
 
 const LABEL: Record<Difficulty, string> = {
   easy: "Easy",
@@ -7,16 +6,18 @@ const LABEL: Record<Difficulty, string> = {
   hard: "Challenging",
 };
 
-const COLOR: Record<Difficulty, string> = {
-  easy: "text-diffEasy",
-  medium: "text-diffMedium",
-  hard: "text-diffHard",
+const BADGE: Record<Difficulty, string> = {
+  easy: "bg-green-100 text-green-700 ring-1 ring-green-200",
+  medium: "bg-amber-100 text-amber-700 ring-1 ring-amber-200",
+  hard: "bg-red-100 text-red-700 ring-1 ring-red-200",
 };
 
 export function DifficultyText({ value }: { value: Difficulty }) {
   return (
-    <>
-      [<span className={cn("font-medium", COLOR[value])}>{LABEL[value]}</span>]
-    </>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${BADGE[value]}`}
+    >
+      {LABEL[value]}
+    </span>
   );
 }

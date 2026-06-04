@@ -131,6 +131,12 @@ export const useAssignmentStore = create<Store>((set, get) => ({
     const body: CreateAssignmentBody = {
       title: form.title.trim(),
       questionTypes: Array.from(new Set(form.rows.map((r) => r.typeKey))),
+      questionBreakdown: form.rows.map((r) => ({
+        type: r.typeKey,
+        typeLabel: r.type,
+        count: r.numQuestions,
+        marksPerQuestion: r.marks,
+      })),
       numQuestions: form.rows.reduce((a, r) => a + r.numQuestions, 0),
       totalMarks: form.rows.reduce((a, r) => a + r.numQuestions * r.marks, 0),
       instructions: form.instructions || undefined,

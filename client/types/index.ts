@@ -5,6 +5,7 @@ export interface AssignmentDTO {
   title: string;
   dueDate?: string;
   questionTypes: string[];
+  questionBreakdown?: { type: string; typeLabel: string; count: number; marksPerQuestion: number }[];
   numQuestions: number;
   totalMarks: number;
   instructions?: string;

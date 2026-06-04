@@ -24,22 +24,16 @@ export function DownloadPdfButton({
     if (busy) return;
     setBusy(true);
     try {
-      const { pdf } = await import("@react-pdf/renderer");
-      const { PaperPdfDocument } = await import("./PaperPdfDocument");
-
-      const doc = (
-        <PaperPdfDocument
-          assignment={assignment}
-          paper={paper}
-          schoolFullName={schoolFullName}
-          subject={subject}
-          className={className}
-          timeAllowed={timeAllowed}
-        />
-      );
-      const blob = await pdf(doc).toBlob();
+      const { buildPaperPdf } = await import("./buildPaperPdf");
+      const blob = buildPaperPdf({
+        assignment,
+        paper,
+        schoolFullName,
+        subject,
+        classLevel: className,
+        timeAllowed,
+      });
       const url = URL.createObjectURL(blob);
-
       const filename = `${assignment.title.replace(/[^a-z0-9-]+/gi, "-").toLowerCase() || "question-paper"}.pdf`;
       const a = document.createElement("a");
       a.href = url;
@@ -47,7 +41,6 @@ export function DownloadPdfButton({
       a.style.display = "none";
       document.body.appendChild(a);
       a.click();
-      // Small delay before revoking so Firefox/Safari can finish
       setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);

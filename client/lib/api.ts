@@ -2,11 +2,19 @@ import type { AssignmentDTO, QuestionPaperDTO } from "../types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
+export interface QuestionBreakdownItem {
+  type: string;
+  typeLabel: string;
+  count: number;
+  marksPerQuestion: number;
+}
+
 export interface CreateAssignmentBody {
   title: string;
   numQuestions: number;
   totalMarks: number;
   questionTypes: string[];
+  questionBreakdown?: QuestionBreakdownItem[];
   instructions?: string;
   dueDate?: string;
   classLevel?: string;
@@ -37,6 +45,7 @@ export async function createAssignment(
     if (body.dueDate) fd.append("dueDate", body.dueDate);
     if (body.classLevel) fd.append("classLevel", body.classLevel);
     if (body.subject) fd.append("subject", body.subject);
+    if (body.questionBreakdown) fd.append("questionBreakdown", JSON.stringify(body.questionBreakdown));
     fd.append("source", file);
     payload = fd;
     // Note: do NOT set Content-Type; the browser sets it with boundary

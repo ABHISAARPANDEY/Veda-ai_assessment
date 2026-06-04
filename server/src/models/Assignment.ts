@@ -2,6 +2,12 @@ import { Schema, model, type InferSchemaType, type Model } from "mongoose";
 
 const AssignmentSchema = new Schema(
   {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: false,  // allow legacy data without owner
+      index: true,
+    },
     title: { type: String, required: true, trim: true },
     dueDate: { type: Date },
     questionTypes: { type: [String], required: true, default: [] },

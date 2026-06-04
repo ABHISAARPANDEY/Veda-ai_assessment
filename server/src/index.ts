@@ -4,6 +4,7 @@ import cors from "cors";
 import { env } from "./config/env.js";
 import { connectMongo } from "./config/db.js";
 import { assignmentsRouter } from "./routes/assignments.routes.js";
+import { authRouter } from "./routes/auth.routes.js";
 import { attachBusListener, initSocketServer } from "./sockets/io.js";
 
 async function main(): Promise<void> {
@@ -15,6 +16,7 @@ async function main(): Promise<void> {
 
   app.get("/api/health", (_req, res) => res.json({ ok: true }));
   app.use("/api/assignments", assignmentsRouter);
+  app.use("/api/auth", authRouter);
 
   const httpServer = http.createServer(app);
   initSocketServer(httpServer);

@@ -16,6 +16,32 @@ export type ProgressFn = (label: string) => Promise<void> | void;
 // in the OpenAI dashboard — this only bounds a single call.
 const MAX_OUTPUT_TOKENS = 4000;
 
+interface BreakdownItem {
+  type: string;
+  marksPerQuestion: number;
+}
+
+function applyMarksFromBreakdown(
+  paper: GeneratedPaper,
+  breakdown: BreakdownItem[] | undefined
+): GeneratedPaper {
+  if (!breakdown || breakdown.length === 0) return paper;
+  const marksByType = new Map<string, number>();
+  for (const item of breakdown) marksByType.set(item.type, item.marksPerQuestion);
+  return {
+    sections: paper.sections.map((s) => ({
+      ...s,
+      questions: s.questions.map((q) => {
+        const m = marksByType.get(q.type);
+        if (typeof m === "number" && m > 0) {
+          return { ...q, marks: m };
+        }
+        return q;
+      }),
+    })),
+  };
+}
+
 /**
  * Call OpenAI once and return parsed + validated paper, or a list of issues.
  */
@@ -123,7 +149,11 @@ export async function generatePaper(
   if (cached) {
     await progress("Loaded from cache");
     console.log(`[generatePaper] cache HIT for key ${key.slice(-12)}`);
-    return reconcilePaper(assignStableIds(cached), { totalMarks: assignment.totalMarks });
+    const breakdown = (assignment as any).questionBreakdown as BreakdownItem[] | undefined;
+    const withMarks = applyMarksFromBreakdown(assignStableIds(cached), breakdown);
+    return breakdown && breakdown.length > 0
+      ? withMarks  // breakdown carries exact marks; skip rescale
+      : reconcilePaper(withMarks, { totalMarks: assignment.totalMarks });
   }
 
   console.log(`[generatePaper] cache MISS for key ${key.slice(-12)} — calling OpenAI`);
@@ -132,7 +162,11 @@ export async function generatePaper(
   const first = await callOnce(assignment, null);
   if (first.ok) {
     await progress("Validating output");
-    const finalized = reconcilePaper(assignStableIds(first.paper), { totalMarks: assignment.totalMarks });
+    const breakdown = (assignment as any).questionBreakdown as BreakdownItem[] | undefined;
+    const withMarks = applyMarksFromBreakdown(assignStableIds(first.paper), breakdown);
+    const finalized = breakdown && breakdown.length > 0
+      ? withMarks
+      : reconcilePaper(withMarks, { totalMarks: assignment.totalMarks });
     await setCachedPaper(key, finalized);
     return finalized;
   }
@@ -143,7 +177,11 @@ export async function generatePaper(
   const second = await callOnce(assignment, first.reason);
   if (second.ok) {
     await progress("Validating output");
-    const finalized = reconcilePaper(assignStableIds(second.paper), { totalMarks: assignment.totalMarks });
+    const breakdown = (assignment as any).questionBreakdown as BreakdownItem[] | undefined;
+    const withMarks = applyMarksFromBreakdown(assignStableIds(second.paper), breakdown);
+    const finalized = breakdown && breakdown.length > 0
+      ? withMarks
+      : reconcilePaper(withMarks, { totalMarks: assignment.totalMarks });
     await setCachedPaper(key, finalized);
     return finalized;
   }

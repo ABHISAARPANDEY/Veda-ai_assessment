@@ -5,13 +5,6 @@ export interface PromptMessages {
   user: string;
 }
 
-/**
- * Static system prompt — kept identical across every call so OpenAI prompt caching
- * (~automatic for ≥1024 token static prefixes; see OpenAI docs) can amortise cost.
- *
- * The shape description here is the contract for the model's output. paperSchema.ts
- * is the runtime enforcement of that same contract.
- */
 const SYSTEM_PROMPT = `You are an exam question paper generator for school teachers.
 
 Output rules (these are not optional):
@@ -21,7 +14,7 @@ Output rules (these are not optional):
   "sections": [
     {
       "id": "A",
-      "title": "Section A — <topical name>",
+      "title": "Section A — <topical name OR the question-type label>",
       "instruction": "<one-line instruction such as 'Attempt all questions.'>",
       "questions": [
         {
@@ -29,7 +22,7 @@ Output rules (these are not optional):
           "text": "<the full question>",
           "difficulty": "easy" | "medium" | "hard",
           "marks": <positive number>,
-          "type": "<one of the requested question types, e.g. 'mcq', 'short', 'long'>",
+          "type": "<backend key e.g. 'mcq', 'short', 'diagram', 'numerical', 'long'>",
           "answer": "<the model's answer to this question, 1-3 sentences>"
         }
       ]
@@ -38,29 +31,27 @@ Output rules (these are not optional):
 }
 
 Generation rules:
-- Generate EXACTLY the requested number of questions in total, distributed across logical sections (Section A, Section B, ...) grouped by question type or difficulty.
+- If a "questionBreakdown" field is provided in the user message, you MUST create ONE SECTION PER ENTRY in the breakdown, in the order given. Each section should:
+  - Have a title that matches the entry's "typeLabel" (e.g. "Section A — Multiple Choice Questions")
+  - Contain EXACTLY the entry's "count" questions
+  - Set every question's "type" field to the entry's "type"
+  - Set every question's "marks" to the entry's "marksPerQuestion"
+- If "questionBreakdown" is NOT provided, fall back to generating EXACTLY the requested numQuestions distributed across logical sections, with marks summing to totalMarks.
 - If "classLevel" is provided (e.g. "Class 5", "Class 12", "JEE Main", "JEE Advanced", "NEET"), calibrate question difficulty and depth to that level. If "subject" is provided, ensure questions stay within that subject area.
-- Distribute the requested total marks across the questions so they SUM TO EXACTLY the requested totalMarks. Whole numbers preferred.
 - Every "difficulty" value must be exactly one of: "easy", "medium", "hard". No other values.
-- Every "type" value must be one of the requested question types.
-- Each question must have non-empty "text".
-- Each question must have a non-empty "answer" — the correct answer to the question, written as a short explanation (1-3 sentences).
+- Each question must have non-empty "text" and a non-empty "answer" (correct answer, 1-3 sentences).
 - Each section must have at least one question.
 - Question and section ids should be short and stable (e.g. "A", "B"; "A1", "A2", "B1").
-- If source material is provided (look for the "sourceText" field), use it as the authoritative basis. Quote concepts, examples, and terms from it. Do NOT invent facts that contradict the source.
-- For large source material (a book or textbook), distribute questions across the document — don't draw them all from the first page.
-- If no source material is provided, generate questions appropriate to the title/topic.`;
+- If source material is provided (look for "sourceText"), use it as the authoritative basis. For a textbook, distribute questions across the document — don't draw them all from page 1.`;
 
-/**
- * Build a system + user message pair for the model.
- * Keeps the system prompt byte-identical across calls; user message carries the variable inputs.
- */
 export function buildPrompt(assignment: AssignmentDoc & { _id: unknown }): PromptMessages {
+  const breakdown = (assignment as { questionBreakdown?: unknown[] }).questionBreakdown ?? [];
   const userPayload = {
     title: assignment.title,
     subject: assignment.subject ?? "",
     classLevel: assignment.classLevel ?? "",
     questionTypes: assignment.questionTypes,
+    questionBreakdown: breakdown,
     numQuestions: assignment.numQuestions,
     totalMarks: assignment.totalMarks,
     instructions: assignment.instructions ?? "",

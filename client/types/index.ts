@@ -17,6 +17,21 @@ export interface AssignmentDTO {
   updatedAt: string;
 }
 
+export interface Student {
+  name: string;
+  rollNo: string;
+}
+
+export interface GroupDTO {
+  _id: string;
+  userId: string;
+  name: string;
+  classLevel: string;
+  students: Student[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type Difficulty = "easy" | "medium" | "hard";
 
 export interface Question {

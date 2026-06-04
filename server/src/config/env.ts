@@ -8,6 +8,8 @@ const EnvSchema = z.object({
   CLIENT_ORIGIN: z.string().url().default("http://localhost:3000"),
   OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
   OPENAI_MODEL: z.string().min(1).default("gpt-4o-mini"),
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 chars"),
+  JWT_EXPIRES_IN: z.string().default("7d"),
 });
 
 const parsed = EnvSchema.safeParse(process.env);

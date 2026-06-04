@@ -14,7 +14,7 @@ export type ProgressFn = (label: string) => Promise<void> | void;
 // Cap output to roughly 15 generously-sized questions. Tune downward for cost,
 // upward only if you really need long-form papers. NOTE: also set a billing cap
 // in the OpenAI dashboard — this only bounds a single call.
-const MAX_OUTPUT_TOKENS = 4000;
+const MAX_OUTPUT_TOKENS = 8000;
 
 interface BreakdownItem {
   type: string;
